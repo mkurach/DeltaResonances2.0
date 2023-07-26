@@ -388,9 +388,13 @@ void createMtMFit(int caseInt){
     //ADDING POINTS FROM PARTICLES
 
     Double_t addPointsX[3] = {0.9395653,0.4936770,0.1395699};
-    Double_t addPointsY[_N_CASES_][3] = {{0.145643,0.105242,0.0762062},
+    /*Double_t addPointsY[_N_CASES_][3] = {{0.145643,0.105242,0.0762062},
                                         {0.11814,0.0991819,0.0716104},
-                                        {0.113079,0.0952766,0.0752646}};
+                                        {0.113079,0.0952766,0.0752646}};*/
+
+    Double_t addPointsY[_N_CASES_][3][_N_FIGURES_] = {{{},{},{}},
+                                        {{},{},{}},
+                                        {{0.108625,0.107424},{0.088614,0.0912045},{0.0667562,0.0683127}}};
 
     TGraph* grPart = new TGraph(3,addPointsX,addPointsY[caseInt]);
     grPart->SetMarkerStyle(20);
