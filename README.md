@@ -42,6 +42,11 @@ I am focusing on Delta0 and Delta++ reconstruction from their pion-proton and pi
 - input: root files from *outputPart*
 - output: root files with fitted function in *outputPart*
 
+**compParticlesFitMt**
+- fit funtion to mt histograms for stable particles
+- input: root files from *outputPart*
+- output: root files with fitted function in *outputPart*
+
 **makeHistEvMix**
 - perform event mixing on deltas
 - input: Jędrzejowe files from *lustre*
@@ -71,3 +76,8 @@ I am focusing on Delta0 and Delta++ reconstruction from their pion-proton and pi
 - perform fit for mt for different m ranges
 - input: histograms in *outputMt*
 - output: root files and png in *outputMt*
+
+**compMFitNew**
+- perform fit for mass for Manley and Monitz parametrisation
+- input:  root files from *outputBasic*
+- output: root file in *outputM*
