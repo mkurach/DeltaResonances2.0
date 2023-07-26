@@ -75,19 +75,19 @@ void seekParticles(TH1D* H1D[][2], ParticleCoor particle) {
 
 
             if( pid == TMath::Abs(2212) ) {//proton
-                H1D[0][1]->Fill(vec.Mt());
+                H1D[0][1]->Fill(vec.Mt(),1.0/TMath::Power(vec.Mt(),1.5));
                 if(vec.Rapidity() > 0.69 && vec.Rapidity() < 0.79)
-                    H1D[0][0]->Fill(vec.Mt());
+                    H1D[0][0]->Fill(vec.Mt(),1.0/TMath::Power(vec.Mt(),2));
             }
             else if(pid == TMath::Abs(321)) { //kaon
-                H1D[1][1]->Fill(vec.Mt());
+                H1D[1][1]->Fill(vec.Mt(),1.0/TMath::Power(vec.Mt(),1.5));
                 if(vec.Rapidity() > 0.69 && vec.Rapidity() < 0.79)
-                    H1D[1][0]->Fill(vec.Mt());
+                    H1D[1][0]->Fill(vec.Mt(),1.0/TMath::Power(vec.Mt(),2));
             }
             else if(pid == TMath::Abs(211)) {//pion
-                H1D[2][1]->Fill(vec.Mt());
+                H1D[2][1]->Fill(vec.Mt(),1.0/TMath::Power(vec.Mt(),1.5));
                 if(vec.Rapidity() > 0.69 && vec.Rapidity() < 0.79)
-                    H1D[2][0]->Fill(vec.Mt());
+                    H1D[2][0]->Fill(vec.Mt(),1.0/TMath::Power(vec.Mt(),2));
             }
         //}
         
