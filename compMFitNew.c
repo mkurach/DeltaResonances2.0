@@ -45,33 +45,35 @@ void makePaveText(TVirtualPad* can, TString text, double x1, double y1, double x
 Double_t mPi = 0.1395699; //GeV
 Double_t mProt = 0.9382720;
 Double_t delta2Mon = 0.09; //GeV^2
-Double_t delta2Man = 1.0; 
+Double_t delta2Man =0.09;//1.0
 Double_t delta2K = 0.0516; //GeV^2
 
 
 Double_t fitFunctionMMonitz(Double_t *x, Double_t *par) {// 0 - norm, 1 - m_delta, 2 - gamma_delta
-    Double_t k;
+    Double_t k2;
     if(x[0] != 0)
-        k = (x[0]*x[0]-(mPi+mProt)*(mPi+mProt))*(x[0]*x[0]-(mPi-mProt)*(mPi-mProt))/(4.0*x[0]*x[0]);
+        k2 = (x[0]*x[0]-(mPi+mProt)*(mPi+mProt))*(x[0]*x[0]-(mPi-mProt)*(mPi-mProt))/(4.0*x[0]*x[0]);
     else 
-        k = 0;
+        k2 = 0;
 
-    Double_t gamma = par[2]*par[1]/x[0]*TMath::Power(k/TMath::Sqrt(delta2K),3)*TMath::Power((delta2K+delta2Mon)/(k*k+delta2Mon),2);
+    //Double_t gamma = par[2]*par[1]/x[0]*TMath::Power(TMath::Sqrt(k2)/TMath::Sqrt(delta2K),3)*TMath::Power((delta2K+delta2Mon)/(k2+delta2Mon),2);
     //Double_t gamma = 0.117;
-    return par[0]*2.0/3.14*x[0]*x[0]*gamma*gamma/(TMath::Power(x[0]*x[0]-par[1]*par[1],2)+x[0]*x[0]*gamma*gamma);
+    Double_t gamma = par[2]*par[1]/x[0]*TMath::Power(TMath::Sqrt(k2)/TMath::Sqrt(delta2K),3)*TMath::Power((delta2K+par[3])/(k2+par[3]),2);
+    return par[0]*2.0/3.14*x[0]*x[0]*gamma/(TMath::Power(x[0]*x[0]-par[1]*par[1],2)+x[0]*x[0]*gamma*gamma);
 
 }
 
 Double_t fitFunctionMManley(Double_t *x, Double_t *par) {// 0 - norm, 1 - m_delta, 2 - gamma_delta
-    Double_t k;
+    Double_t k2;
     if(x[0] != 0)
-        k = (x[0]*x[0]-(mPi+mProt)*(mPi+mProt))*(x[0]*x[0]-(mPi-mProt)*(mPi-mProt))/(4.0*x[0]*x[0]);
+        k2 = (x[0]*x[0]-(mPi+mProt)*(mPi+mProt))*(x[0]*x[0]-(mPi-mProt)*(mPi-mProt))/(4.0*x[0]*x[0]);
     else 
-        k = 0;
+        k2 = 0;
 
-    Double_t gamma = par[2]*par[1]/x[0]*TMath::Power(k/TMath::Sqrt(delta2K),3)*(delta2K+delta2Man)/(k*k+delta2Man);
+    //Double_t gamma = par[2]*par[1]/x[0]*TMath::Power(TMath::Sqrt(k2)/TMath::Sqrt(delta2K),3)*(delta2K+delta2Man)/(k2+delta2Man);
     //Double_t gamma = 0.117;
-    return par[0]*2.0/3.14*x[0]*x[0]*gamma*gamma/(TMath::Power(x[0]*x[0]-par[1]*par[1],2)+x[0]*x[0]*gamma*gamma);
+    Double_t gamma = par[2]*par[1]/x[0]*TMath::Power(TMath::Sqrt(k2)/TMath::Sqrt(delta2K),3)*(delta2K+par[3])/(k2+par[3]);
+    return par[0]*2.0/3.14*x[0]*x[0]*gamma/(TMath::Power(x[0]*x[0]-par[1]*par[1],2)+x[0]*x[0]*gamma*gamma);
 
 }
 
@@ -88,6 +90,27 @@ Double_t fitFunctionM(Double_t *x, Double_t *par) {
         return 0;
 }
 
+Double_t gammaFunctionMon(Double_t *x, Double_t *par) {
+    Double_t k2;
+    if(x[0] != 0)
+        k2 = (x[0]*x[0]-(mPi+mProt)*(mPi+mProt))*(x[0]*x[0]-(mPi-mProt)*(mPi-mProt))/(4.0*x[0]*x[0]);
+    else 
+        k2 = 0;
+
+    //return par[0]*par[2]*par[1]/x[0]*TMath::Power(TMath::Sqrt(k2)/TMath::Sqrt(delta2K),3)*TMath::Power((delta2K+delta2Mon)/(k2+delta2Mon),2);
+    return par[0]*par[2]*par[1]/x[0]*TMath::Power(TMath::Sqrt(k2)/TMath::Sqrt(delta2K),3)*TMath::Power((delta2K+par[3])/(k2+par[3]),2);
+}
+
+Double_t gammaFunctionMan(Double_t *x, Double_t *par) {
+        Double_t k2;
+    if(x[0] != 0)
+        k2 = (x[0]*x[0]-(mPi+mProt)*(mPi+mProt))*(x[0]*x[0]-(mPi-mProt)*(mPi-mProt))/(4.0*x[0]*x[0]);
+    else 
+        k2 = 0;
+
+    //return par[2]*par[1]/x[0]*TMath::Power(TMath::Sqrt(k2)/TMath::Sqrt(delta2K),3)*(delta2K+delta2Man)/(k2+delta2Man);
+    return par[2]*par[1]/x[0]*TMath::Power(TMath::Sqrt(k2)/TMath::Sqrt(delta2K),3)*(delta2K+par[3])/(k2+par[3]);
+}
 
 
 void compMFitNew() {
@@ -129,15 +152,18 @@ void compMFitNew() {
     //FUNCTION
 
     TF1* fun[_N_FIGURES_];
-    Int_t nparams = 3;
+    //Int_t nparams = 3;
+    Int_t nparams = 4;
 
     fun[0] = new TF1("fun0",fitFunctionMMonitz,XMin,XMax,nparams);
     fun[1] = new TF1("fun1",fitFunctionMManley,XMin,XMax,nparams);
 
-    for(int i = 0; i < _N_FIGURES_; i++) {
-        fun[i]->SetParameters(1,1.232,0.117);
-    }
+    /*for(int i = 0; i < _N_FIGURES_; i++) {
+        fun[i]->SetParameters(1.0,1.232,0.117);
+    }*/
 
+    fun[0]->SetParameters(1.0,1.232,0.117,delta2Mon);
+    fun[1]->SetParameters(1.0,1.232,0.117,delta2Man);
 
 
 
@@ -151,22 +177,23 @@ void compMFitNew() {
     Double_t gammaFitError[_N_CASES_][_N_PAIRS_][_N_FIGURES_];
 
     TF1* funCop;
-    Double_t fitMin = 1.2;
-    Double_t fitMax = 1.3;
+    Double_t fitMin = 1.125;
+    Double_t fitMax = 1.25;
+    //1.125,1.250
 
-
-    //TEST
+    //TEST FUNKCJI
 
     TF1* funBW = new TF1("fun2",fitFunctionM,XMin,XMax,nparams);
-    funBW->SetParameters(0.25,1.232,0.117);
+    funBW->SetParameters(fun[0]->GetMaximum(1.1,1.3),1.232,0.117);
     funBW->SetLineColor(kBlue);
 
     TCanvas* can = new TCanvas("can","can",1000,1000);
     can->cd();
-    fun[0]->Draw();
+    funBW->Draw();
+    fun[0]->Draw("same");
     fun[1]->SetLineColor(kGreen);
     fun[1]->Draw("same");
-    funBW->Draw("same");
+    
 
     TLine* gMin = new TLine(1.232-0.117/2.0,0,1.232-0.117/2.0,0.6);
     TLine* gMax = new TLine(1.232+0.117/2.0,0,1.232+0.117/2.0,0.6);
@@ -179,11 +206,24 @@ void compMFitNew() {
     mZero->Draw("same");
     can->Write();
 
+    TF1* gammaMon = new TF1("fun3",gammaFunctionMon,XMin,XMax,nparams);
+    TF1* gammaMan = new TF1("fun4",gammaFunctionMan,XMin,XMax,nparams);
+
+    gammaMon->SetParameters(1,1.232,0.117);
+    gammaMan->SetParameters(1,1.232,0.117);
+    TCanvas* can2 = new TCanvas("can2","can2",1000,1000);
+    can2->cd();
+    gammaMan->SetLineColor(kGreen);
+    gammaMon->Draw();
+    gammaMan->Draw("same");
+    can2->Write();
+
+
     for(int i = 0; i < _N_CASES_; i++){   
         for(int j = 0; j < _N_PAIRS_; j++) { 
             for(int k = 0; k < _N_FIGURES_; k++) {
                 cout<<casesNames[i].Data()<<"  "<<pairsTitles[j].Data()<<endl;
-                histM[i][j][k]->Fit(fun[k],"","",fitMin,fitMax);
+                histM[i][j][k]->Fit(fun[k],"M","M",fitMin,fitMax);
 
                 funCop = (TF1*)fun[k]->Clone("funCop");
                 funCop->SetRange(XMin,XMax);
@@ -218,8 +258,61 @@ void compMFitNew() {
     fileOut->Save();
     fileOut->Close();
 
-    gROOT -> SetBatch(kFALSE); 
 
+    //FITING TO EXPERIMENT
+
+    TH1D *expHist[_N_PAIRS_][_N_FIGURES_];
+
+    TFile* filePlus = new TFile("/u/mkurach/figures_with_data/moje/exp/massPlus.root");
+    TFile* fileMinus = new TFile("/u/mkurach/figures_with_data/moje/exp/massMinus.root");
+    expHist[0][0] = (TH1D*)filePlus->Get("h_circ_int_mass_mult0_case1__289")->Clone(Form("%s%sExpHist",pairsTitles[0].Data(),figuresNames[0].Data()));       
+    expHist[0][1] = (TH1D*)filePlus->Get("h_circ_int_mass_mult0_case1__289")->Clone(Form("%s%sExpHist",pairsTitles[0].Data(),figuresNames[1].Data()));       
+    
+    expHist[1][0] = (TH1D*)fileMinus->Get("h_circ_int_mass_mult0_case2__302")->Clone(Form("%s%sExpHist",pairsTitles[1].Data(),figuresNames[0].Data()));       
+    expHist[1][1] = (TH1D*)fileMinus->Get("h_circ_int_mass_mult0_case2__302")->Clone(Form("%s%sExpHist",pairsTitles[1].Data(),figuresNames[1].Data()));       
+    
+
+    Double_t mFitExp[_N_PAIRS_][_N_FIGURES_];
+    Double_t gammaFitExp[_N_PAIRS_][_N_FIGURES_];
+    Double_t mFitErrorExp[_N_PAIRS_][_N_FIGURES_];
+    Double_t gammaFitErrorExp[_N_PAIRS_][_N_FIGURES_];
+
+    TFile* fileOutExp = new TFile("outputM/outFitMNewExp.root","RECREATE");
+    fileOutExp->cd();
+
+    //fun[0]->SetParameters(1.0,1.232,0.117);
+    //fun[1]->SetParameters(1.0,1.232,0.117);
+
+    fun[0]->SetParameters(1.0,1.232,0.117,delta2Mon);
+    fun[1]->SetParameters(1.0,1.232,0.117,delta2Man);
+
+    fitMin = 1.125;
+    fitMax = 1.55;
+    //35 dziala
+
+    for (int j = 0; j < _N_PAIRS_; j++) {
+        for (int k = 0; k < _N_FIGURES_; k++) {
+
+            expHist[j][k]->Fit(fun[k],"M","M",fitMin,fitMax);
+            funCop = (TF1*)fun[k]->Clone("funCop");
+            funCop->SetRange(XMin,XMax);
+            funCop->SetLineStyle(2);
+            expHist[j][k]->GetListOfFunctions()->Add(funCop);
+
+            mFitExp[j][k] = fun[k]->GetParameter(1);
+            gammaFitExp[j][k] = fun[k]->GetParameter(2);
+            mFitErrorExp[j][k] = fun[k]->GetParError(1);
+            gammaFitErrorExp[j][k] = fun[k]->GetParError(2);
+
+            expHist[j][k]->Write();
+        }
+    }
+    
+
+
+
+    fileOutExp->Save();
+    fileOutExp->Close();
     //GETTING MAXIMUM
 
     /*Double_t mMax[_N_CASES_][_N_PAIRS_];
@@ -378,5 +471,6 @@ void compMFitNew() {
     fileOut2->Save();*/
 
 
+    gROOT -> SetBatch(kFALSE); 
 
 }
