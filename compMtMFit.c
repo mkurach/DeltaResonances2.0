@@ -392,35 +392,50 @@ void createMtMFit(int caseInt){
                                         {0.11814,0.0991819,0.0716104},
                                         {0.113079,0.0952766,0.0752646}};*/
 
-    Double_t addPointsY[_N_CASES_][3][_N_FIGURES_] = {{{},{},{}},
-                                        {{},{},{}},
-                                        {{0.108625,0.107424},{0.088614,0.0912045},{0.0667562,0.0683127}}};
+    /*Double_t addPointsY[_N_CASES_][3][_N_FIGURES_] = {{{0.129938,0.125233},{0.101965,0.100151},{0.0679871,0.0688109}},
+                                        {{0.112855,0.111528},{0.0940142,0.0950485},{0.0641781,0.065325}},
+                                        {{0.108625,0.107424},{0.088614,0.0912045},{0.0667562,0.0683127}}};*/
 
-    TGraph* grPart = new TGraph(3,addPointsX,addPointsY[caseInt]);
-    grPart->SetMarkerStyle(20);
-    grPart->SetMarkerSize(1);
-    grPart->SetMarkerColor(kBlue+2);
-    grPart->GetXaxis()->SetLimits(0,1.7);
-    grPart->GetYaxis()->SetRangeUser(-0.05,0.3);
-    grPart->GetYaxis()->SetTitle("T_{eff} (GeV)");
-    grPart->GetXaxis()->SetTitle("M (GeV/c^{2})");
-    grPart->SetTitle("");
-    grPart->GetYaxis()->SetTitleOffset(1.6);
-    grPart->GetXaxis()->SetTitleOffset(1.3);
+    Double_t addPointsY[_N_CASES_][_N_FIGURES_][3] = {{{0.129938,0.101965,0.0679871},{0.125233,0.100151,0.0688109}},
+                                                        {{0.112855,0.0940142,0.0641781},{0.111528,0.0950485,0.065325}},
+                                                        {{0.108625,0.088614,0.0667562},{0.107424,0.0912045,0.0683127}}};
 
 
-    fun2->SetLineColor(kBlue);
-    grPart->Fit("fun2","","",0.1,1);
-    Double_t betaPar = fun2->GetParameter(0);
-    Double_t tPar = fun2->GetParameter(1);
-    Double_t betaParEr = fun2->GetParError(0);
-    Double_t tParEr = fun2->GetParError(1);
+    TGraph* grPart[_N_FIGURES_];
 
-    fun2Cop = (TF1*)fun2->Clone("fun2Cop");
-    fun2Cop->SetRange(0,1.6);
-    fun2Cop->SetLineStyle(2);
-    fun2Cop->SetLineColor(kBlue);
-    grPart->GetListOfFunctions()->Add(fun2Cop);
+    Double_t betaPar[_N_FIGURES_];
+    Double_t tPar[_N_FIGURES_];
+    Double_t betaParEr[_N_FIGURES_];
+    Double_t tParEr[_N_FIGURES_];
+
+    for(int j = 0; j < _N_FIGURES_; j++) {
+        grPart[j]= new TGraph(3,addPointsX,addPointsY[caseInt][j]);
+        grPart[j]->SetMarkerStyle(20);
+        grPart[j]->SetMarkerSize(1);
+        grPart[j]->SetMarkerColor(kBlue+2);
+        grPart[j]->GetXaxis()->SetLimits(0,1.7);
+        grPart[j]->GetYaxis()->SetRangeUser(-0.05,0.3);
+        grPart[j]->GetYaxis()->SetTitle("T_{eff} (GeV)");
+        grPart[j]->GetXaxis()->SetTitle("M (GeV/c^{2})");
+        grPart[j]->SetTitle("");
+        grPart[j]->GetYaxis()->SetTitleOffset(1.6);
+        grPart[j]->GetXaxis()->SetTitleOffset(1.3);
+
+        fun2->SetLineColor(kBlue);
+        grPart[j]->Fit("fun2","","",0.1,1);
+        betaPar[j] = fun2->GetParameter(0);
+        tPar[j] = fun2->GetParameter(1);
+        betaParEr[j] = fun2->GetParError(0);
+        tParEr[j] = fun2->GetParError(1);
+
+        fun2Cop = (TF1*)fun2->Clone("fun2Cop");
+        fun2Cop->SetRange(0,1.6);
+        fun2Cop->SetLineStyle(2);
+        fun2Cop->SetLineColor(kBlue);
+        grPart[j]->GetListOfFunctions()->Add(fun2Cop);
+    }
+
+
     
 
 
@@ -480,7 +495,7 @@ void createMtMFit(int caseInt){
 
             //canParticles[j]->cd();
             
-            grPart->Draw("ap ");
+            grPart[k]->Draw("ap ");
             grTeff[j][k]->Draw("p same");
             
             makePaveText(can[j][k],Case.Data(),0.6,0.6,0.99,0.99,0.04);
@@ -488,8 +503,8 @@ void createMtMFit(int caseInt){
             makePaveText(can[j][k],Form("T = %.2f (%.2f) MeV",t[j][k]*1e3,tEr[j][k]*1e3),0.55,0.34,0.7,0.44,0.035,kRed+3);
 
             //makePaveText(can[j][k],Case.Data(),0.6,0.6,0.99,0.99,0.04);0.15,0.6,0.3,0.7,0.035
-            makePaveText(can[j][k],Form(" <#beta> = %.2f (%.2f)",betaPar,betaParEr),0.15,0.55,0.3,0.65,0.035,kBlue+3);
-            makePaveText(can[j][k],Form("T = %.2f (%.2f) MeV",tPar*1e3,tParEr*1e3),0.15,0.59,0.3,0.69,0.035,kBlue+3);
+            makePaveText(can[j][k],Form(" <#beta> = %.2f (%.2f)",betaPar[k],betaParEr[k]),0.15,0.55,0.3,0.65,0.035,kBlue+3);
+            makePaveText(can[j][k],Form("T = %.2f (%.2f) MeV",tPar[k]*1e3,tParEr[k]*1e3),0.15,0.59,0.3,0.69,0.035,kBlue+3);
 
             can[j][k]->SaveAs(Form("outputMt/%s%s%sTeffM.png",Case.Data(),pairsTitles[j].Data(),histNames[k].Data()));
             //canParticles[j]->SaveAs(Form("/u/mkurach/figures_with_data/moje/ladne/%s%steffMParticles.pdf",Case.Data(),pairsTitles[j].Data()));
@@ -532,7 +547,7 @@ void compMtMFit() {
     //TGraphErrors grTeff[_N_CASES_][_N_PAIRS_];
    //for(int i = 0; i < _N_CASES_; i++)
     //  createMtMFit(i);
-    createMtMFit(0);    
+    //createMtMFit(0);    
     //createMtMFit(1);
-    //createMtMFit(2);
+    createMtMFit(2);
 }
