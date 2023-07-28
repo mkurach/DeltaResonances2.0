@@ -80,4 +80,4 @@ I am focusing on Delta0 and Delta++ reconstruction from their pion-proton and pi
 **compMFitNew**
 - perform fit for mass for Manley and Monitz parametrisation
 - input:  root files from *outputBasic*
-- output: root file in *outputM*
+- output: root files in *outputM*
