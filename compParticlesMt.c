@@ -192,8 +192,8 @@ void createHistograms(int i) {
 void compParticlesMt() {
 
     //createHistograms(0);
-    //createHistograms(1);
-    createHistograms(2);
+    createHistograms(1);
+    //createHistograms(2);
 
 }
 
