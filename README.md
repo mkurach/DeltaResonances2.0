@@ -80,4 +80,9 @@ I am focusing on Delta0 and Delta++ reconstruction from their pion-proton and pi
 **compMFitNewData**
 - perform fit for mass for Manley and Monitz parametrisation for experimental data  
 - input:  root files from *figures_with_data*
-- output: root files in *outputMNewData*
+- output: root files and png in *outputMNewData*
+
+**compMFitNewTherm**
+- perform fit for mass for Manley and Monitz parametrisation for Therminator data
+- input:  root files from *outputBasic*
+- output: root files in *outputMNewTherm*
