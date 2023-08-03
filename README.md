@@ -77,7 +77,7 @@ I am focusing on Delta0 and Delta++ reconstruction from their pion-proton and pi
 - input: histograms in *outputMt*
 - output: root files and png in *outputMt*
 
-**compMFitNew**
-- perform fit for mass for Manley and Monitz parametrisation
-- input:  root files from *outputBasic*
-- output: root files in *outputM*
+**compMFitNewData**
+- perform fit for mass for Manley and Monitz parametrisation for experimental data  
+- input:  root files from *figures_with_data*
+- output: root files in *outputMNewData*
