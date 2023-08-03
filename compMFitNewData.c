@@ -192,7 +192,7 @@ void setDeltaNoExp(TH1D* dataHist[],TF1* dataFunction[],TF1* dataFunctionExtra[]
         //fun[i]->SetParLimits(2,0.1,0.2);
     }
 
-    TFile* fileOut = new TFile("outputNewData/outSetDeltaNoExp.root","RECREATE");
+    TFile* fileOut = new TFile("outputMNewData/outSetDeltaNoExp.root","RECREATE");
 
     TCanvas* can[_N_PAIRS_];
 
@@ -233,7 +233,7 @@ void setDeltaNoExp(TH1D* dataHist[],TF1* dataFunction[],TF1* dataFunctionExtra[]
 
         fileOut->cd();
         dataHist[i]->Write();
-        can[i]->SaveAs(Form("outputNewData/%s%s.png",pairsTitles[i].Data(),canvasesNames[0].Data()));
+        can[i]->SaveAs(Form("outputMNewData/%s%s.png",pairsTitles[i].Data(),canvasesNames[0].Data()));
 
 
     }
@@ -243,7 +243,7 @@ void setDeltaNoExp(TH1D* dataHist[],TF1* dataFunction[],TF1* dataFunctionExtra[]
 
 
     ofstream fileTxt;
-    fileTxt.open(Form("outputNewData/%sFitResults.txt",canvasesNames[0].Data()));
+    fileTxt.open(Form("outputMNewData/%sFitResults.txt",canvasesNames[0].Data()));
 
 
     for(int i = 0; i < _N_PAIRS_; i++) {
@@ -288,7 +288,7 @@ void parDeltaNoExp(TH1D* dataHist[],TF1* dataFunction[],TF1* dataFunctionExtra[]
     }
 
 
-    TFile* fileOut = new TFile("outputNewData/outParDeltaNoExp.root","RECREATE");
+    TFile* fileOut = new TFile("outputMNewData/outParDeltaNoExp.root","RECREATE");
 
     TCanvas* can[_N_PAIRS_];
 
@@ -334,7 +334,7 @@ void parDeltaNoExp(TH1D* dataHist[],TF1* dataFunction[],TF1* dataFunctionExtra[]
 
         fileOut->cd();
         dataHist[i]->Write();
-        can[i]->SaveAs(Form("outputNewData/%s%s.png",pairsTitles[i].Data(),canvasesNames[1].Data()));
+        can[i]->SaveAs(Form("outputMNewData/%s%s.png",pairsTitles[i].Data(),canvasesNames[1].Data()));
 
 
         
@@ -346,7 +346,7 @@ void parDeltaNoExp(TH1D* dataHist[],TF1* dataFunction[],TF1* dataFunctionExtra[]
     fileOut->Close();
 
     ofstream fileTxt;
-    fileTxt.open(Form("outputNewData/%sFitResults.txt",canvasesNames[1].Data()));
+    fileTxt.open(Form("outputMNewData/%sFitResults.txt",canvasesNames[1].Data()));
 
 
     for(int i = 0; i < _N_PAIRS_; i++) {
@@ -386,7 +386,7 @@ void setDeltaExp(TH1D* dataHist[],TF1* dataFunction[],TF1* dataFunctionExtra[]){
         //fun[i]->SetParLimits(3,0.01,1.0);
     }
 
-    TFile* fileOut = new TFile("outputNewData/outSetDeltaExp.root","RECREATE");
+    TFile* fileOut = new TFile("outputMNewData/outSetDeltaExp.root","RECREATE");
 
     TCanvas* can[_N_PAIRS_];
 
@@ -431,7 +431,7 @@ void setDeltaExp(TH1D* dataHist[],TF1* dataFunction[],TF1* dataFunctionExtra[]){
 
         fileOut->cd();
         dataHist[i]->Write();
-        can[i]->SaveAs(Form("outputNewData/%s%s.png",pairsTitles[i].Data(),canvasesNames[2].Data()));
+        can[i]->SaveAs(Form("outputMNewData/%s%s.png",pairsTitles[i].Data(),canvasesNames[2].Data()));
 
 
     }
@@ -441,7 +441,7 @@ void setDeltaExp(TH1D* dataHist[],TF1* dataFunction[],TF1* dataFunctionExtra[]){
 
 
     ofstream fileTxt;
-    fileTxt.open(Form("outputNewData/%sFitResults.txt",canvasesNames[2].Data()));
+    fileTxt.open(Form("outputMNewData/%sFitResults.txt",canvasesNames[2].Data()));
 
 
     for(int i = 0; i < _N_PAIRS_; i++) {
@@ -480,7 +480,7 @@ void parDeltaExp(TH1D* dataHist[],TF1* dataFunction[],TF1* dataFunctionExtra[]) 
         fun[i]->SetParLimits(4,0.01,0.5);
     }
 
-    TFile* fileOut = new TFile("outputNewData/outParDeltaExp.root","RECREATE");
+    TFile* fileOut = new TFile("outputMNewData/outParDeltaExp.root","RECREATE");
 
     TCanvas* can[_N_PAIRS_];
 
@@ -532,7 +532,7 @@ void parDeltaExp(TH1D* dataHist[],TF1* dataFunction[],TF1* dataFunctionExtra[]) 
 
         fileOut->cd();
         dataHist[i]->Write();
-        can[i]->SaveAs(Form("outputNewData/%s%s.png",pairsTitles[i].Data(),canvasesNames[3].Data()));
+        can[i]->SaveAs(Form("outputMNewData/%s%s.png",pairsTitles[i].Data(),canvasesNames[3].Data()));
 
 
     }
@@ -541,7 +541,7 @@ void parDeltaExp(TH1D* dataHist[],TF1* dataFunction[],TF1* dataFunctionExtra[]) 
     fileOut->Close();
 
     ofstream fileTxt;
-    fileTxt.open(Form("outputNewData/%sFitResults.txt",canvasesNames[3].Data()));
+    fileTxt.open(Form("outputMNewData/%sFitResults.txt",canvasesNames[3].Data()));
 
 
     for(int i = 0; i < _N_PAIRS_; i++) {
@@ -566,7 +566,7 @@ void compCanvases() {
 
     TFile* fileIn[_N_CANVASES_];
     for(int i = 0; i < _N_CANVASES_; i++) {
-        fileIn[i] = new TFile(Form("outputNewData/out%s.root",canvasesNames[i].Data()));
+        fileIn[i] = new TFile(Form("outputMNewData/out%s.root",canvasesNames[i].Data()));
         for(int j = 0; j < _N_PAIRS_; j++) {
             hist[j][i] = (TH1D*)fileIn[i]->Get(Form("%sDataHist",pairsTitles[j].Data()));
             hist[j][i]->SetTitle(canvasesNamesNice[i].Data());
@@ -574,7 +574,7 @@ void compCanvases() {
     }
 
     TCanvas* canOut[_N_PAIRS_];
-    TFile* fileOut = new TFile("outputNewData/outComp.root","RECREATE");
+    TFile* fileOut = new TFile("outputMNewData/outComp.root","RECREATE");
     for(int i = 0; i < _N_PAIRS_; i++) {
         canOut[i] = new TCanvas(Form("%sComp",pairsTitles[i].Data()),Form("%sComp",pairsTitles[i].Data()),4000,4000);
         canOut[i]->Divide(2,2);
@@ -585,7 +585,7 @@ void compCanvases() {
 
         fileOut->cd();
         canOut[i]->Write();
-        //canOut[i]->SaveAs(Form("outputNewData/%sComp.png",pairsTitles[i].Data()));
+        //canOut[i]->SaveAs(Form("outputMNewData/%sComp.png",pairsTitles[i].Data()));
 
 
 
