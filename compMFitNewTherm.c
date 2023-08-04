@@ -24,7 +24,7 @@
 
 #define _N_CASES_ 3
 #define _N_PAIRS_ 2
-#define _N_FIGURES_ 2
+#define _N_FIGURES_ 3 
 #define _N_CANVASES_ 4
 
 
@@ -46,15 +46,15 @@ void makePaveText(TVirtualPad* can, TString text, double x1, double y1, double x
 
 TString pairsTitles[_N_PAIRS_] = {"PiPlusP","PiMinusP"};
 TString pairsNames[_N_PAIRS_] = {"#pi^{+}p","#pi^{-}p"};
-TString figuresNames[_N_FIGURES_] = {"Monitz","Manley"};
+TString figuresNames[_N_FIGURES_] = {"Monitz","Manley","Breit-Wigner"};
 TString casesNames[_N_CASES_] = {"CaseA","CaseB","CaseC"};
 TString canvasesNames[_N_CANVASES_] = {"SetDeltaNoExp","ParDeltaNoExp","SetDeltaExp","ParDeltaExp"};
 TString canvasesNamesNice[_N_CANVASES_] = {"#delta^{2} set, no exp","#delta^{2} as parameter, no exp","#delta^{2} set, with exp","#delta^{2} as parameter, with exp"};
 
-int colors[_N_FIGURES_] = {kBlue, kGreen+2};
-int lines[_N_FIGURES_] = {2,4};
+int colors[_N_FIGURES_] = {kBlue, kGreen+2,kRed};
+int lines[_N_FIGURES_] = {2,4,1};
 Int_t XBins = 1000;
-Float_t XMin = 1.1;
+Float_t XMin = 1.08;
 Float_t XMax = 1.6;
 
 Double_t fitMin = 1.125;
@@ -146,11 +146,11 @@ Double_t fitFunctionM(Double_t *x, Double_t *par) {
     Double_t mN = 0.93;
     Double_t q = TMath::Sqrt(2*Ecm*mN+TMath::Power(Ecm,2));
     Double_t mu = 0.18;*/
-    if(x[0] >= 1 && x[0] <= 1.6)
+    //if(x[0] >= 1 && x[0] <= 1.6)
         //return TMath::Power(q,3)/(TMath::Power(q,3)+TMath::Power(mu,3))*par[0]/(1+4*TMath::Power((x[0]-par[1])/par[2],2));
         return par[0]/(1+4*TMath::Power((x[0]-par[1])/par[2],2));
-    else    
-        return 0;
+    //else    
+        //return 0;
 }
 
 /*Double_t gammaFunctionMon(Double_t *x, Double_t *par) {
@@ -181,17 +181,18 @@ void setDeltaNoExp(TH1D* dataHist[][_N_PAIRS_]) { // 0 - norm, 1 - m_delta, 2 - 
     TF1* fun[_N_FIGURES_];
     fun[0] = new TF1(figuresNames[0].Data(),monitzSetDeltaNoExp,XMin,XMax,3);
     fun[1] = new TF1(figuresNames[1].Data(),manleySetDeltaNoExp,XMin,XMax,3);
-
-    fun[0]->SetLineColor(colors[0]);
-    fun[1]->SetLineColor(colors[1]);
-
-    fun[0]->SetLineStyle(lines[0]);
-    fun[1]->SetLineStyle(lines[1]);
+    fun[2] = new TF1(figuresNames[2].Data(),fitFunctionM,XMin,XMax,3);
 
     for(int i = 0; i < _N_FIGURES_; i++) {
-        fun[i]->SetParameters(1.0,1.232,0.117);
+        fun[i]->SetLineColor(colors[i]);
+        fun[i]->SetLineStyle(lines[i]);
+
+    }
+
+    for(int i = 0; i < _N_FIGURES_; i++) {
+        fun[i]->SetParameters(0.1,1.232,0.117);
         fun[i]->SetParLimits(1,1.1,1.4);
-        //fun[i]->SetParLimits(2,0.1,0.2);
+        fun[i]->SetParLimits(2,0.0,1.0);
     }
 
     TFile* fileOut = new TFile("outputMNewTherm/outSetDeltaNoExp.root","RECREATE");
@@ -215,8 +216,8 @@ void setDeltaNoExp(TH1D* dataHist[][_N_PAIRS_]) { // 0 - norm, 1 - m_delta, 2 - 
                 cout<<"\t\t\t\t"<<figuresNames[j].Data()<<endl;
                 dataHist[k][i]->Fit(fun[j],"M+","M+",fitMin,fitMax);
                 
-                //fun[j]->SetRange(XMin,XMax);
-                //dataHist[k][i]->GetListOfFunctions()->Add(fun[j]);
+                fun[j]->SetRange(XMin,XMax);
+                dataHist[k][i]->GetListOfFunctions()->Add(fun[j]);
 
                 m0[k][i][j] = fun[j]->GetParameter(1);
                 gamma0[k][i][j] = fun[j]->GetParameter(2);
@@ -232,7 +233,7 @@ void setDeltaNoExp(TH1D* dataHist[][_N_PAIRS_]) { // 0 - norm, 1 - m_delta, 2 - 
             makePaveText(can[k][i], canvasesNamesNice[0].Data(),0.45, 0.85, 0.7, 0.9, 0.04);
             makePaveText(can[k][i], "Monitz", 0.6, 0.75, 0.8, 0.8, 0.04, colors[0]);
             makePaveText(can[k][i], "Manley", 0.6, 0.7, 0.8, 0.75, 0.04, colors[1]);
-            //makePaveText(can[i], "Breit-Wigner", 0.6, 0.65, 0.8, 0.7 , 0.04, kRed);
+            makePaveText(can[k][i], "Breit-Wigner", 0.6, 0.65, 0.8, 0.7 , 0.04, kRed);
             makePaveText(can[k][i], pairsNames[i].Data(),0.7, 0.5, 0.8, 0.55, 0.05);
 
             fileOut->cd();
@@ -256,7 +257,7 @@ void setDeltaNoExp(TH1D* dataHist[][_N_PAIRS_]) { // 0 - norm, 1 - m_delta, 2 - 
             fileTxt<<"\t"<<pairsTitles[i].Data()<<"\n";
             for(int j = 0; j < _N_FIGURES_; j++) {
                 fileTxt<<"\t\t"<<figuresNames[j].Data()<<"\n";
-                fileTxt<<Form("\t\t\tM=%.3f (%.3f)\t#Gamma = %.3f (%.3f)  \t#delta^{2} = %.2f",m0[k][i][j],m0Err[k][i][j],gamma0[k][i][j],gamma0Err[k][i][j],delta2Mon)<<"\n";
+                fileTxt<<Form("\t\t\tM=%.3f (%.3f)\t#Gamma = %.3f (%.3f) ",m0[k][i][j],m0Err[k][i][j],gamma0[k][i][j],gamma0Err[k][i][j])<<"\n";
 
             }
 
@@ -274,81 +275,89 @@ void setDeltaNoExp(TH1D* dataHist[][_N_PAIRS_]) { // 0 - norm, 1 - m_delta, 2 - 
 
 }
   
-/*void parDeltaNoExp(TH1D* dataHist[]) { // 0 - norm, 1 - m_delta, 2 - gamma_delta, 3 - delta
+void parDeltaNoExp(TH1D* dataHist[][_N_PAIRS_]) { // 0 - norm, 1 - m_delta, 2 - gamma_delta, 3 - delta
 
 
     TF1* fun[_N_FIGURES_];
 
     fun[0] = new TF1(figuresNames[0].Data(),monitzParDeltaNoExp,XMin,XMax,4);
     fun[1] = new TF1(figuresNames[1].Data(),manleyParDeltaNoExp,XMin,XMax,4);
+    fun[2] = new TF1(figuresNames[2].Data(),fitFunctionM,XMin,XMax,3);
 
-    fun[0]->SetLineColor(colors[0]);
-    fun[1]->SetLineColor(colors[1]);
-
-    fun[0]->SetLineStyle(lines[0]);
-    fun[1]->SetLineStyle(lines[1]);
+    for(int i = 0; i < _N_FIGURES_; i++) {
+        fun[i]->SetLineColor(colors[i]);
+        fun[i]->SetLineStyle(lines[i]);
+    }
 
     for(int j = 0; j < _N_FIGURES_; j++) {
-        fun[j]->SetParameters(1.0,1.232,0.117,delta2Mon);
+        if (j == 2) {
+            fun[j]->SetParameters(1.0,1.232,0.117);
+        }
+        else {
+            fun[j]->SetParameters(10.0,1.232,0.117,0.5);
+            fun[j]->SetParLimits(3,0.01,1.0);
+        }
         fun[j]->SetParLimits(1,1.1,1.4);
-        fun[j]->SetParLimits(3,0.01,1.0);
-        //fun[i]->SetParLimits(2,0.1,0.2);
+        fun[j]->SetParLimits(2,0.0,1.0);
+
     }
 
 
     TFile* fileOut = new TFile("outputMNewTherm/outParDeltaNoExp.root","RECREATE");
 
-    TCanvas* can[_N_PAIRS_];
+    TCanvas* can[_N_CASES_][_N_PAIRS_];
 
-    Double_t m0[_N_PAIRS_][_N_FIGURES_];
-    Double_t gamma0[_N_PAIRS_][_N_FIGURES_];
-    Double_t m0Err[_N_PAIRS_][_N_FIGURES_];
-    Double_t gamma0Err[_N_PAIRS_][_N_FIGURES_];
-    Double_t delta[_N_PAIRS_][_N_FIGURES_];
-    Double_t deltaErr[_N_PAIRS_][_N_FIGURES_];
+    Double_t m0[_N_CASES_][_N_PAIRS_][_N_FIGURES_];
+    Double_t gamma0[_N_CASES_][_N_PAIRS_][_N_FIGURES_];
+    Double_t m0Err[_N_CASES_][_N_PAIRS_][_N_FIGURES_];
+    Double_t gamma0Err[_N_CASES_][_N_PAIRS_][_N_FIGURES_];
+    Double_t delta[_N_CASES_][_N_PAIRS_][_N_FIGURES_];
+    Double_t deltaErr[_N_CASES_][_N_PAIRS_][_N_FIGURES_];
 
-    for(int i = 0; i < _N_PAIRS_; i++) {
-        cout<<"\t\t"<<pairsTitles[i].Data()<<endl;
-        cout<<"\t\t\t"<<canvasesNames[1].Data()<<endl;
-        can[i] = new TCanvas(Form("%s%s",pairsTitles[i].Data(),canvasesNames[1].Data()),Form("%s%s",pairsTitles[i].Data(),canvasesNames[1].Data()),1000,1000);
+    for(int k = 0; k < _N_CASES_; k++) {
+        cout<<"\t"<<casesNames[k].Data()<<endl;
+        for(int i = 0; i < _N_PAIRS_; i++) {
+            cout<<"\t\t"<<pairsTitles[i].Data()<<endl;
+            cout<<"\t\t\t"<<canvasesNames[1].Data()<<endl;
+            can[k][i] = new TCanvas(Form("%s%s%s",casesNames[k].Data(),pairsTitles[i].Data(),canvasesNames[1].Data()),Form("%s%s%s",casesNames[k].Data(),pairsTitles[1].Data(),canvasesNames[0].Data()),1000,1000);
+
+            for(int j = 0; j < _N_FIGURES_; j++) {
+                cout<<"\t\t\t\t"<<figuresNames[j].Data()<<endl;
+                dataHist[k][i]->Fit(fun[j],"M+","M+",fitMin,fitMax);
+                
+                fun[j]->SetRange(XMin,XMax);
+                dataHist[k][i]->GetListOfFunctions()->Add(fun[j]);
+
+                m0[k][i][j] = fun[j]->GetParameter(1);
+                gamma0[k][i][j] = fun[j]->GetParameter(2);
+                m0Err[k][i][j] = fun[j]->GetParError(1);
+                gamma0Err[k][i][j] = fun[j]->GetParError(2);
+
+                if (j != 2) {
+                    delta[k][i][j] = fun[j]->GetParameter(3);
+                    deltaErr[k][i][j] = fun[j]->GetParError(3);
+                }
+
+            }
+
+            can[k][i]->cd();
+            dataHist[k][i]->Draw();
 
 
-        for(int j = 0; j < _N_FIGURES_; j++) {
-            cout<<"\t\t\t\t"<<figuresNames[j].Data()<<endl;
-            dataHist[i]->Fit(fun[j],"M+","M+",fitMin,fitMax);
+            makePaveText(can[k][i], canvasesNamesNice[1].Data(),0.45, 0.85, 0.7, 0.9, 0.04);
+            makePaveText(can[k][i], "Monitz", 0.6, 0.75, 0.8, 0.8, 0.04, colors[0]);
+            makePaveText(can[k][i], "Manley", 0.6, 0.7, 0.8, 0.75, 0.04, colors[1]);
+            makePaveText(can[k][i], "Breit-Wigner", 0.6, 0.65, 0.8, 0.7 , 0.04, kRed);
+            makePaveText(can[k][i], pairsNames[i].Data(),0.7, 0.5, 0.8, 0.55, 0.05);
 
-            fun[j]->SetRange(XMin,XMax);
-            dataHist[i]->GetListOfFunctions()->Add(fun[j]);
-
-            m0[i][j] = fun[j]->GetParameter(1);
-            gamma0[i][j] = fun[j]->GetParameter(2);
-            m0Err[i][j] = fun[j]->GetParError(1);
-            gamma0Err[i][j] = fun[j]->GetParError(2);
-            delta[i][j] = fun[j]->GetParameter(3);
-            deltaErr[i][j] = fun[j]->GetParError(3);
+            fileOut->cd();
+            dataHist[k][i]->Write();
+            can[k][i]->SaveAs(Form("outputMNewTherm/%s%s%s.png",casesNames[k].Data(),pairsTitles[i].Data(),canvasesNames[1].Data()));
 
 
         }
-
-        can[i]->cd();
-        dataHist[i]->GetListOfFunctions()->Add(dataFunctionExtra[i]);
-        dataHist[i]->Draw();
-
-        makePaveText(can[i], canvasesNamesNice[1].Data(),0.45, 0.85, 0.7, 0.9, 0.04);
-        makePaveText(can[i], "Monitz", 0.6, 0.75, 0.8, 0.8, 0.04, colors[0]);
-        makePaveText(can[i], "Manley", 0.6, 0.7, 0.8, 0.75, 0.04, colors[1]);
-        makePaveText(can[i], "Breit-Wigner", 0.6, 0.65, 0.8, 0.7 , 0.04, kRed);
-        makePaveText(can[i], pairsNames[i].Data(),0.7, 0.5, 0.8, 0.55, 0.05);
-
-        fileOut->cd();
-        dataHist[i]->Write();
-        can[i]->SaveAs(Form("outputMNewTherm/%s%s.png",pairsTitles[i].Data(),canvasesNames[1].Data()));
-
-
-        
-
-
     }
+
 
     fileOut->Save();
     fileOut->Close();
@@ -356,92 +365,110 @@ void setDeltaNoExp(TH1D* dataHist[][_N_PAIRS_]) { // 0 - norm, 1 - m_delta, 2 - 
     ofstream fileTxt;
     fileTxt.open(Form("outputMNewTherm/%sFitResults.txt",canvasesNames[1].Data()));
 
-
-    for(int i = 0; i < _N_PAIRS_; i++) {
-        fileTxt<<pairsTitles[i].Data()<<"\n";
-        for(int j = 0; j < _N_FIGURES_; j++) {
-            fileTxt<<"\t"<<figuresNames[j].Data()<<"\n";
-            fileTxt<<Form("\t\t  M = %.3f (%.3f)\t#Gamma = %.3f (%.3f)\t#delta^{2} = %.2f (%.2f)",m0[i][j],m0Err[i][j],gamma0[i][0],gamma0Err[i][j],delta[i][j],deltaErr[i][j])<<"\n";
-
+    for(int k = 0; k < _N_CASES_; k++) {
+        fileTxt<<casesNames[k].Data()<<"\n";
+        for(int i = 0; i < _N_PAIRS_; i++) {
+            fileTxt<<"\t"<<pairsTitles[i].Data()<<"\n";
+            for(int j = 0; j < _N_FIGURES_; j++) {
+                fileTxt<<"\t\t"<<figuresNames[j].Data()<<"\n";
+                if(j == 2)
+                    fileTxt<<Form("\t\t\tM=%.3f (%.3f)\t#Gamma = %.3f (%.3f)",m0[k][i][j],m0Err[k][i][j],gamma0[k][i][j],gamma0Err[k][i][j])<<"\n";
+                else
+                    fileTxt<<Form("\t\t\tM=%.3f (%.3f)\t#Gamma = %.3f (%.3f)  \t#delta^{2} = %.2f (%.2f)",m0[k][i][j],m0Err[k][i][j],gamma0[k][i][j],gamma0Err[k][i][j],delta[k][i][j],deltaErr[k][i][j])<<"\n";
+            }
 
         }
-
+        fileTxt<<"\n";
     }
-    fileTxt<<"\tB-W\n\t\t M = 1.215\t#Gamma = 0.117";
+
 
     fileTxt.close();
 
 }
    
 
-void setDeltaExp(TH1D* dataHist[]){ // 0 - norm, 1 - m_delta, 2 - gamma_delta, 3 - temp
+void setDeltaExp(TH1D* dataHist[][_N_PAIRS_]){ // 0 - norm, 1 - m_delta, 2 - gamma_delta, 3 - temp
 
     TF1* fun[_N_FIGURES_];
     fun[0] = new TF1(figuresNames[0].Data(),monitzSetDeltaExp,XMin,XMax,4);
     fun[1] = new TF1(figuresNames[1].Data(),manleySetDeltaExp,XMin,XMax,4);
+    fun[2] = new TF1(figuresNames[2].Data(),fitFunctionM,XMin,XMax,3);
 
-    fun[0]->SetLineColor(colors[0]);
-    fun[1]->SetLineColor(colors[1]);
-
-    fun[0]->SetLineStyle(lines[0]);
-    fun[1]->SetLineStyle(lines[1]);
 
     for(int i = 0; i < _N_FIGURES_; i++) {
-        fun[i]->SetParameters(10000,1.232,0.117,0.5);
-        fun[i]->SetParLimits(1,1.1,1.5);
-        fun[i]->SetParLimits(3,0.01,0.5);
-        //fun[i]->SetParLimits(2,0.1,1.0);
-        //fun[i]->SetParLimits(3,0.01,1.0);
+        fun[i]->SetLineColor(colors[i]);
+        fun[i]->SetLineStyle(lines[i]);
     }
+
+    for(int j = 0; j < _N_FIGURES_; j++) {
+        if (j == 2) {
+            fun[j]->SetParameters(1.0,1.232,0.117);
+        }
+        else {
+            fun[j]->SetParameters(10,1.232,0.117,0.5);
+            fun[j]->SetParLimits(3,0.01,0.5);
+        }
+        fun[j]->SetParLimits(1,1.1,1.4);
+        //fun[j]->SetParLimits(0,1,10000);
+        fun[j]->SetParLimits(2,0.0,1.0);
+
+    }
+
 
     TFile* fileOut = new TFile("outputMNewTherm/outSetDeltaExp.root","RECREATE");
 
-    TCanvas* can[_N_PAIRS_];
+    TCanvas* can[_N_CASES_][_N_PAIRS_];
 
-    Double_t m0[_N_PAIRS_][_N_FIGURES_];
-    Double_t gamma0[_N_PAIRS_][_N_FIGURES_];
-    Double_t m0Err[_N_PAIRS_][_N_FIGURES_];
-    Double_t gamma0Err[_N_PAIRS_][_N_FIGURES_];
-    Double_t temp[_N_PAIRS_][_N_FIGURES_];
-    Double_t tempErr[_N_PAIRS_][_N_FIGURES_];
+    Double_t m0[_N_CASES_][_N_PAIRS_][_N_FIGURES_];
+    Double_t gamma0[_N_CASES_][_N_PAIRS_][_N_FIGURES_];
+    Double_t m0Err[_N_CASES_][_N_PAIRS_][_N_FIGURES_];
+    Double_t gamma0Err[_N_CASES_][_N_PAIRS_][_N_FIGURES_];
+    Double_t temp[_N_CASES_][_N_PAIRS_][_N_FIGURES_];
+    Double_t tempErr[_N_CASES_][_N_PAIRS_][_N_FIGURES_];
 
-    for(int i = 0; i < _N_PAIRS_; i++) {
-        cout<<"\t\t"<<pairsTitles[i].Data()<<endl;
-        cout<<"\t\t\t"<<canvasesNames[2].Data()<<endl;
-        can[i] = new TCanvas(Form("%s%s",pairsTitles[i].Data(),canvasesNames[2].Data()),Form("%s%s",pairsTitles[i].Data(),canvasesNames[2].Data()),1000,1000);
 
-        for(int j = 0; j < _N_FIGURES_; j++) {
-            cout<<"\t\t\t\t"<<figuresNames[j].Data()<<endl;
-            dataHist[i]->Fit(fun[j],"M+","M+",fitMin,fitMax);
+    for(int k = 0; k < _N_CASES_; k++) {
+        cout<<"\t"<<casesNames[k].Data()<<endl;
+        for(int i = 0; i < _N_PAIRS_; i++) {
+            cout<<"\t\t"<<pairsTitles[i].Data()<<endl;
+            cout<<"\t\t\t"<<canvasesNames[2].Data()<<endl;
+            can[k][i] = new TCanvas(Form("%s%s%s",casesNames[k].Data(),pairsTitles[i].Data(),canvasesNames[2].Data()),Form("%s%s%s",casesNames[k].Data(),pairsTitles[i].Data(),canvasesNames[2].Data()),1000,1000);
 
-            fun[j]->SetRange(XMin,XMax);
-            dataHist[i]->GetListOfFunctions()->Add(fun[j]);
+            for(int j = 0; j < _N_FIGURES_; j++) {
+                cout<<"\t\t\t\t"<<figuresNames[j].Data()<<endl;
+                dataHist[k][i]->Fit(fun[j],"M+","M+",fitMin,fitMax);
+                
+                fun[j]->SetRange(XMin,XMax);
+                dataHist[k][i]->GetListOfFunctions()->Add(fun[j]);
 
-            m0[i][j] = fun[j]->GetParameter(1);
-            gamma0[i][j] = fun[j]->GetParameter(2);
-            m0Err[i][j] = fun[j]->GetParError(1);
-            gamma0Err[i][j] = fun[j]->GetParError(2);
-            temp[i][j] = fun[j]->GetParameter(3);
-            tempErr[i][j] = fun[j]->GetParError(3);
+                m0[k][i][j] = fun[j]->GetParameter(1);
+                gamma0[k][i][j] = fun[j]->GetParameter(2);
+                m0Err[k][i][j] = fun[j]->GetParError(1);
+                gamma0Err[k][i][j] = fun[j]->GetParError(2);
+
+                if (j != 2) {
+                    temp[k][i][j] = fun[j]->GetParameter(3);
+                    tempErr[k][i][j] = fun[j]->GetParError(3);
+                }
+
+            }
+
+            can[k][i]->cd();
+            dataHist[k][i]->Draw();
+
+
+            makePaveText(can[k][i], canvasesNamesNice[2].Data(),0.45, 0.85, 0.7, 0.9, 0.04);
+            makePaveText(can[k][i], "Monitz", 0.6, 0.75, 0.8, 0.8, 0.04, colors[0]);
+            makePaveText(can[k][i], "Manley", 0.6, 0.7, 0.8, 0.75, 0.04, colors[1]);
+            makePaveText(can[k][i], "Breit-Wigner", 0.6, 0.65, 0.8, 0.7 , 0.04, kRed);
+            makePaveText(can[k][i], pairsNames[i].Data(),0.7, 0.5, 0.8, 0.55, 0.05);
+
+            fileOut->cd();
+            dataHist[k][i]->Write();
+            can[k][i]->SaveAs(Form("outputMNewTherm/%s%s%s.png",casesNames[k].Data(),pairsTitles[i].Data(),canvasesNames[2].Data()));
+
 
         }
-
-        can[i]->cd();
-        dataHist[i]->GetListOfFunctions()->Add(dataFunctionExtra[i]);
-        dataHist[i]->Draw();
-
-
-        makePaveText(can[i], canvasesNamesNice[2].Data(),0.45, 0.85, 0.7, 0.9, 0.04);
-        makePaveText(can[i], "Monitz", 0.6, 0.75, 0.8, 0.8, 0.04, colors[0]);
-        makePaveText(can[i], "Manley", 0.6, 0.7, 0.8, 0.75, 0.04, colors[1]);
-        makePaveText(can[i], "Breit-Wigner", 0.6, 0.65, 0.8, 0.7 , 0.04, kRed);
-        makePaveText(can[i], pairsNames[i].Data(),0.7, 0.5, 0.8, 0.55, 0.05);
-
-        fileOut->cd();
-        dataHist[i]->Write();
-        can[i]->SaveAs(Form("outputMNewTherm/%s%s.png",pairsTitles[i].Data(),canvasesNames[2].Data()));
-
-
     }
 
     fileOut->Save();
@@ -452,17 +479,22 @@ void setDeltaExp(TH1D* dataHist[]){ // 0 - norm, 1 - m_delta, 2 - gamma_delta, 3
     fileTxt.open(Form("outputMNewTherm/%sFitResults.txt",canvasesNames[2].Data()));
 
 
-    for(int i = 0; i < _N_PAIRS_; i++) {
-        fileTxt<<pairsTitles[i].Data()<<"\n";
-        for(int j = 0; j < _N_FIGURES_; j++) {
-            fileTxt<<"\t"<<figuresNames[j].Data()<<"\n";
-            fileTxt<<Form("\t\tM=%.3f (%.3f)\t#Gamma = %.3f (%.3f)\t#delta^{2} = %.2f\tT = %.3f (%.3f) MeV",m0[i][j],m0Err[i][j],gamma0[i][j],gamma0Err[i][j],delta2Mon,temp[i][j]*1e3,tempErr[i][j]*1e3)<<"\n";
 
+    for(int k = 0; k < _N_CASES_; k++) {
+        fileTxt<<casesNames[k].Data()<<"\n";
+        for(int i = 0; i < _N_PAIRS_; i++) {
+            fileTxt<<"\t"<<pairsTitles[i].Data()<<"\n";
+            for(int j = 0; j < _N_FIGURES_; j++) {
+                fileTxt<<"\t\t"<<figuresNames[j].Data()<<"\n";
+                if(j == 2)
+                    fileTxt<<Form("\t\t\tM=%.3f (%.3f)\t#Gamma = %.3f (%.3f)",m0[k][i][j],m0Err[k][i][j],gamma0[k][i][j],gamma0Err[k][i][j])<<"\n";
+                else
+                    fileTxt<<Form("\t\t\tM=%.3f (%.3f)\t#Gamma = %.3f (%.3f)  \t#delta^{2} = %.2f \tT = %.3f (%.3f) MeV",m0[k][i][j],m0Err[k][i][j],gamma0[k][i][j],gamma0Err[k][i][j],delta2Mon,temp[k][i][j]*1e3,tempErr[k][i][j]*1e3)<<"\n";
+            }
 
         }
-
+        fileTxt<<"\n";
     }
-    fileTxt<<"\tB-W\n\t\t M = 1.215\t#Gamma = 0.117";
 
     fileTxt.close();
 
@@ -470,80 +502,93 @@ void setDeltaExp(TH1D* dataHist[]){ // 0 - norm, 1 - m_delta, 2 - gamma_delta, 3
 
 }
 
-void parDeltaExp(TH1D* dataHist[]) { // 0 - norm, 1 - m_delta, 2 - gamma_delta, 3 - delta, 4 - temp
+void parDeltaExp(TH1D* dataHist[][_N_PAIRS_]) { // 0 - norm, 1 - m_delta, 2 - gamma_delta, 3 - delta, 4 - temp
     TF1* fun[_N_FIGURES_];
     fun[0] = new TF1(figuresNames[0].Data(),monitzParDeltaExp,XMin,XMax,5);
     fun[1] = new TF1(figuresNames[1].Data(),manleyParDeltaExp,XMin,XMax,5);
-
-    fun[0]->SetLineColor(colors[0]);
-    fun[1]->SetLineColor(colors[1]);
-
-    fun[0]->SetLineStyle(lines[0]);
-    fun[1]->SetLineStyle(lines[1]);
+    fun[2] = new TF1(figuresNames[2].Data(),fitFunctionM,XMin,XMax,3);
 
     for(int i = 0; i < _N_FIGURES_; i++) {
-        fun[i]->SetParameters(10.0,1.232,0.117,delta2Mon,0.5);
-        fun[i]->SetParLimits(1,1.1,1.5);
-        fun[i]->SetParLimits(3,0.01,1.0);
-        fun[i]->SetParLimits(4,0.01,0.5);
+        fun[i]->SetLineColor(colors[i]);
+        fun[i]->SetLineStyle(lines[i]);
     }
+
+    for(int j = 0; j < _N_FIGURES_; j++) {
+        if (j == 2) {
+            fun[j]->SetParameters(1.0,1.232,0.117);
+        }
+        else {
+            fun[j]->SetParameters(10.0,1.232,0.117,delta2Mon,0.5);
+            fun[j]->SetParLimits(3,0.01,1.0);
+            fun[j]->SetParLimits(4,0.01,0.5);
+        }
+        fun[j]->SetParLimits(1,1.1,1.4);
+        //fun[j]->SetParLimits(0,0.1,1e6);
+        fun[j]->SetParLimits(2,0.0,2.0);
+
+    }
+
 
     TFile* fileOut = new TFile("outputMNewTherm/outParDeltaExp.root","RECREATE");
 
-    TCanvas* can[_N_PAIRS_];
+    TCanvas* can[_N_CASES_][_N_PAIRS_];
 
-    Double_t m0[_N_PAIRS_][_N_FIGURES_];
-    Double_t gamma0[_N_PAIRS_][_N_FIGURES_];
-    Double_t m0Err[_N_PAIRS_][_N_FIGURES_];
-    Double_t gamma0Err[_N_PAIRS_][_N_FIGURES_];
-    Double_t delta[_N_PAIRS_][_N_FIGURES_];
-    Double_t deltaErr[_N_PAIRS_][_N_FIGURES_];
-    Double_t temp[_N_PAIRS_][_N_FIGURES_];
-    Double_t tempErr[_N_PAIRS_][_N_FIGURES_];
+    Double_t m0[_N_CASES_][_N_PAIRS_][_N_FIGURES_];
+    Double_t gamma0[_N_CASES_][_N_PAIRS_][_N_FIGURES_];
+    Double_t m0Err[_N_CASES_][_N_PAIRS_][_N_FIGURES_];
+    Double_t gamma0Err[_N_CASES_][_N_PAIRS_][_N_FIGURES_];
+    Double_t temp[_N_CASES_][_N_PAIRS_][_N_FIGURES_];
+    Double_t tempErr[_N_CASES_][_N_PAIRS_][_N_FIGURES_];
+    Double_t delta[_N_CASES_][_N_PAIRS_][_N_FIGURES_];
+    Double_t deltaErr[_N_CASES_][_N_PAIRS_][_N_FIGURES_];
 
 
+    for(int k = 0; k < _N_CASES_; k++) {
+        cout<<"\t"<<casesNames[k].Data()<<endl;
+        for(int i = 0; i < _N_PAIRS_; i++) {
+            cout<<"\t\t"<<pairsTitles[i].Data()<<endl;
+            cout<<"\t\t\t"<<canvasesNames[3].Data()<<endl;
+            can[k][i] = new TCanvas(Form("%s%s%s",casesNames[k].Data(),pairsTitles[i].Data(),canvasesNames[3].Data()),Form("%s%s%s",casesNames[k].Data(),pairsTitles[k].Data(),canvasesNames[3].Data()),1000,1000);
 
-    for(int i = 0; i < _N_PAIRS_; i++) {
-        cout<<"\t\t"<<pairsTitles[i].Data()<<endl;
-        cout<<"\t\t\t"<<canvasesNames[3].Data()<<endl;
-        can[i] = new TCanvas(Form("%s%s",pairsTitles[i].Data(),canvasesNames[3].Data()),Form("%s%s",pairsTitles[i].Data(),canvasesNames[3].Data()),1000,1000);
+            for(int j = 0; j < _N_FIGURES_; j++) {
+                cout<<"\t\t\t\t"<<figuresNames[j].Data()<<endl;
+                dataHist[k][i]->Fit(fun[j],"M+","M+",fitMin,fitMax);
+                
+                fun[j]->SetRange(XMin,XMax);
+                dataHist[k][i]->GetListOfFunctions()->Add(fun[j]);
 
-        for(int j = 0; j < _N_FIGURES_; j++) {
-            cout<<"\t\t\t\t"<<figuresNames[j].Data()<<endl;
-            dataHist[i]->Fit(fun[j],"M+","M+",fitMin,fitMax);
+                m0[k][i][j] = fun[j]->GetParameter(1);
+                gamma0[k][i][j] = fun[j]->GetParameter(2);
+                m0Err[k][i][j] = fun[j]->GetParError(1);
+                gamma0Err[k][i][j] = fun[j]->GetParError(2);
 
-            fun[j]->SetRange(XMin,XMax);
-            dataHist[i]->GetListOfFunctions()->Add(fun[j]);
+                if (j != 2) {
+                    temp[k][i][j] = fun[j]->GetParameter(4);
+                    tempErr[k][i][j] = fun[j]->GetParError(4);
+                    delta[k][i][j] = fun[j]->GetParameter(3);
+                    deltaErr[k][i][j] = fun[j]->GetParError(3);
+                }
 
-            m0[i][j] = fun[j]->GetParameter(1);
-            gamma0[i][j] = fun[j]->GetParameter(2);
-            m0Err[i][j] = fun[j]->GetParError(1);
-            gamma0Err[i][j] = fun[j]->GetParError(2);
-            delta[i][j] = fun[j]->GetParameter(3);
-            deltaErr[i][j] = fun[j]->GetParError(3);
-            temp[i][j] = fun[j]->GetParameter(4);
-            tempErr[i][j] = fun[j]->GetParError(4);
+            }
+
+            can[k][i]->cd();
+            dataHist[k][i]->Draw();
+
+
+            makePaveText(can[k][i], canvasesNamesNice[3].Data(),0.45, 0.85, 0.7, 0.9, 0.04);
+            makePaveText(can[k][i], "Monitz", 0.6, 0.75, 0.8, 0.8, 0.04, colors[0]);
+            makePaveText(can[k][i], "Manley", 0.6, 0.7, 0.8, 0.75, 0.04, colors[1]);
+            makePaveText(can[k][i], "Breit-Wigner", 0.6, 0.65, 0.8, 0.7 , 0.04, kRed);
+            makePaveText(can[k][i], pairsNames[i].Data(),0.7, 0.5, 0.8, 0.55, 0.05);
+
+            fileOut->cd();
+            dataHist[k][i]->Write();
+            can[k][i]->SaveAs(Form("outputMNewTherm/%s%s%s.png",casesNames[k].Data(),pairsTitles[i].Data(),canvasesNames[3].Data()));
 
 
         }
-
-        can[i]->cd();
-        dataHist[i]->GetListOfFunctions()->Add(dataFunctionExtra[i]);
-        dataHist[i]->Draw();
-
-
-        makePaveText(can[i], canvasesNamesNice[3].Data(),0.45, 0.85, 0.7, 0.9, 0.04);
-        makePaveText(can[i], "Monitz", 0.6, 0.75, 0.8, 0.8, 0.04, colors[0]);
-        makePaveText(can[i], "Manley", 0.6, 0.7, 0.8, 0.75, 0.04, colors[1]);
-        makePaveText(can[i], "Breit-Wigner", 0.6, 0.65, 0.8, 0.7 , 0.04, kRed);
-        makePaveText(can[i], pairsNames[i].Data(),0.7, 0.5, 0.8, 0.55, 0.05);
-
-        fileOut->cd();
-        dataHist[i]->Write();
-        can[i]->SaveAs(Form("outputMNewTherm/%s%s.png",pairsTitles[i].Data(),canvasesNames[3].Data()));
-
-
     }
+
 
     fileOut->Save();
     fileOut->Close();
@@ -552,16 +597,22 @@ void parDeltaExp(TH1D* dataHist[]) { // 0 - norm, 1 - m_delta, 2 - gamma_delta, 
     fileTxt.open(Form("outputMNewTherm/%sFitResults.txt",canvasesNames[3].Data()));
 
 
-    for(int i = 0; i < _N_PAIRS_; i++) {
-        fileTxt<<pairsTitles[i].Data()<<"\n";
-        for(int j = 0; j < _N_FIGURES_; j++) {
-            fileTxt<<"\t"<<figuresNames[j].Data()<<"\n";
-            fileTxt<<Form("\t\tM=%.3f (%.3f)\t#Gamma = %.3f (%.3f)\t#delta^{2} = %.2f\tT = %.2f (%.2f) MeV",m0[i][j],m0Err[i][j],gamma0[i][j],gamma0Err[i][j],delta[i][j],temp[i][j]*1e3,tempErr[i][j]*1e3)<<"\n";
+
+    for(int k = 0; k < _N_CASES_; k++) {
+        fileTxt<<casesNames[k].Data()<<"\n";
+        for(int i = 0; i < _N_PAIRS_; i++) {
+            fileTxt<<"\t"<<pairsTitles[i].Data()<<"\n";
+            for(int j = 0; j < _N_FIGURES_; j++) {
+                fileTxt<<"\t\t"<<figuresNames[j].Data()<<"\n";
+                if(j == 2)
+                    fileTxt<<Form("\t\t\tM=%.3f (%.3f)\t#Gamma = %.3f (%.3f)",m0[k][i][j],m0Err[k][i][j],gamma0[k][i][j],gamma0Err[k][i][j])<<"\n";
+                else
+                    fileTxt<<Form("\t\t\tM=%.3f (%.3f)\t#Gamma = %.3f (%.3f)  \t#delta^{2} = %.2f \tT = %.3f (%.3f) MeV",m0[k][i][j],m0Err[k][i][j],gamma0[k][i][j],gamma0Err[k][i][j],delta[k][i][j],temp[k][i][j]*1e3,tempErr[k][i][j]*1e3)<<"\n";
+            }
 
         }
-
+        fileTxt<<"\n";
     }
-    fileTxt<<"\tB-W\n\t\t M = 1.215\t#Gamma = 0.117";
 
     fileTxt.close();
 
@@ -570,39 +621,65 @@ void parDeltaExp(TH1D* dataHist[]) { // 0 - norm, 1 - m_delta, 2 - gamma_delta, 
 
 void compCanvases() {
 
-    TH1D* hist[_N_PAIRS_][_N_CANVASES_];
+    TH1D* hist[_N_CASES_][_N_PAIRS_][_N_CANVASES_];
 
     TFile* fileIn[_N_CANVASES_];
     for(int i = 0; i < _N_CANVASES_; i++) {
         fileIn[i] = new TFile(Form("outputMNewTherm/out%s.root",canvasesNames[i].Data()));
-        for(int j = 0; j < _N_PAIRS_; j++) {
-            hist[j][i] = (TH1D*)fileIn[i]->Get(Form("%sDataHist",pairsTitles[j].Data()));
-            hist[j][i]->SetTitle(canvasesNamesNice[i].Data());
+        for(int k = 0; k < _N_CASES_; k++) {
+            for(int j = 0; j < _N_PAIRS_; j++) {
+                hist[k][j][i] = (TH1D*)fileIn[i]->Get(Form("%s%sMFitHist",casesNames[k].Data(),pairsTitles[j].Data()));
+                //hist[k][j][i]->SetTitle(canvasesNamesNice[i].Data());
+                hist[k][j][i]->SetMarkerSize(0.9);
+                hist[k][j][i]->GetXaxis()->SetTitleSize(0.05);
+                hist[k][j][i]->GetYaxis()->SetTitleSize(0.05);
+                hist[k][j][i]->GetXaxis()->SetLabelSize(0.05);
+                hist[k][j][i]->GetYaxis()->SetLabelSize(0.05);
+
+             }
         }
     }
 
-    TCanvas* canOut[_N_PAIRS_];
+    TCanvas* canOut[_N_CASES_][_N_PAIRS_];
     TFile* fileOut = new TFile("outputMNewTherm/outComp.root","RECREATE");
-    for(int i = 0; i < _N_PAIRS_; i++) {
-        canOut[i] = new TCanvas(Form("%sComp",pairsTitles[i].Data()),Form("%sComp",pairsTitles[i].Data()),4000,4000);
-        canOut[i]->Divide(2,2);
-        for(int j = 0; j < _N_CANVASES_; j++) {
-            canOut[i]->cd(j+1);
-            hist[i][j]->Draw();
+    for(int k = 0; k < _N_CASES_; k++) {
+        for(int i = 0; i < _N_PAIRS_; i++) {
+            canOut[k][i] = new TCanvas(Form("%s%sComp",casesNames[k].Data(),pairsTitles[i].Data()),Form("%s%sComp",casesNames[k].Data(),pairsTitles[i].Data()),1000,1000);
+            canOut[k][i]->Divide(2,2);
+            for(int j = 0; j < _N_CANVASES_; j++) {
+                canOut[k][i]->cd(j+1);
+                hist[k][i][j]->Draw();
+                gStyle->SetPadLeftMargin(0.13);
+                gStyle->SetPadBottomMargin(0.11);
+                if (j == 1) {
+                    makePaveText(canOut[k][i], canvasesNamesNice[j].Data(),0.69, 0.9, 0.9, 0.95, 0.025);
+                    makePaveText(canOut[k][i], "Monitz", 0.8, 0.85, 0.9, 0.88, 0.025, colors[0]);
+                    makePaveText(canOut[k][i], "Manley", 0.8, 0.82, 0.9, 0.85, 0.025, colors[1]);
+                    makePaveText(canOut[k][i], "Breit-Wigner", 0.8, 0.79, 0.9, 0.82 , 0.025, kRed);
+                    makePaveText(canOut[k][i], casesNames[k].Data(),0.85, 0.73, 0.9, 0.77, 0.025);
+                    makePaveText(canOut[k][i], pairsNames[i].Data(),0.85, 0.69, 0.9, 0.73, 0.025);
+                }
+                else if(j == 0) 
+                    makePaveText(canOut[k][i], canvasesNamesNice[j].Data(),0.25, 0.9, 0.5, 0.95, 0.025);
+                else if(j == 3)
+                    makePaveText(canOut[k][i], canvasesNamesNice[j].Data(),0.68, 0.4, 0.9, 0.45, 0.025);
+                else
+                    makePaveText(canOut[k][i], canvasesNamesNice[j].Data(),0.25, 0.4, 0.5, 0.45, 0.025);
+            }
+
+            fileOut->cd();
+            canOut[k][i]->Write();
+            canOut[k][i]->SaveAs(Form("outputMNewTherm/%s%sComp.png",casesNames[k].Data(),pairsTitles[i].Data()));
+
+//canOut[k][i]->SaveAs(Form("outputMNewTherm/%s%sComp.eps",casesNames[k].Data(),pairsTitles[i].Data()));
+
         }
-
-        fileOut->cd();
-        canOut[i]->Write();
-        //canOut[i]->SaveAs(Form("outputMNewTherm/%sComp.png",pairsTitles[i].Data()));
-
-
 
     }
 
-    fileOut->Close();
-    fileOut->Save();
 
-
+        fileOut->Close();
+        fileOut->Save();
 
 
 
@@ -612,15 +689,11 @@ void compCanvases() {
 
 
 
-*/
-
-
-
 void compMFitNewTherm() {
     
     //gROOT->SetBatch(kTRUE);
     gStyle->SetOptStat(0);
-
+    ROOT::Math::MinimizerOptions::SetDefaultMaxFunctionCalls(20000);
 
     TH1D *dataHist[_N_CASES_][_N_PAIRS_];
 
@@ -638,36 +711,20 @@ void compMFitNewTherm() {
                 dataHist[i][j]->Rebin(rebin);
                 dataHist[i][j]->Scale(1.0/events[i]/dX/rebin);
                 dataHist[i][j]->GetXaxis()->SetRangeUser(1.05,XMax);
+                dataHist[i][j]->SetMarkerSize(1.0);
+                dataHist[i][j]->SetMarkerStyle(8);
             
         }
     }
 
-    /*for(int i = 0; i < _N_PAIRS_; i++) {
-        dataHist[i]->SetTitle("");
-        dataHist[i]->GetXaxis()->SetTitle(YTitles[i].Data());
-        dataHist[i]->GetYaxis()->SetTitle("dN/dM (GeV/c^{2})^{-1}");
-        dataHist[i]->GetYaxis()->SetRangeUser(0,25);
-        dataHist[i]->GetYaxis()->SetTitleSize(0.04);
-        dataHist[i]->GetXaxis()->SetTitleSize(0.04);
-        dataHist[i]->GetYaxis()->SetLabelSize(0.04);
-        dataHist[i]->GetXaxis()->SetLabelSize(0.04);
 
-        dataHist[i]->GetXaxis()->SetRangeUser(1.05,XMax);
-        dataHist[i]->SetMarkerSize(1.3);
-    }
-
-    dataHist[1]->SetMarkerStyle(21);
-     dataHist[0]->SetMarkerStyle(8);*/
-
-
-    cout<<"halo"<<endl;
-
-    setDeltaNoExp(dataHist);
+    gStyle->SetOptStat(0);
+    //setDeltaNoExp(dataHist);
    //parDeltaNoExp(dataHist);
     //setDeltaExp(dataHist);
-    //parDeltaExp(dataHist);
+   //parDeltaExp(dataHist);
 
-    //compCanvases();
+    compCanvases();
 
 
 
