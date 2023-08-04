@@ -581,11 +581,27 @@ void compCanvases() {
         for(int j = 0; j < _N_CANVASES_; j++) {
             canOut[i]->cd(j+1);
             hist[i][j]->Draw();
+
+            gStyle->SetPadLeftMargin(0.13);
+            gStyle->SetPadBottomMargin(0.11);
+            if (j == 1) {
+                makePaveText(canOut[i], canvasesNamesNice[j].Data(),0.69, 0.9, 0.9, 0.95, 0.025);
+                makePaveText(canOut[i], "Monitz", 0.8, 0.85, 0.9, 0.88, 0.025, colors[0]);
+                makePaveText(canOut[i], "Manley", 0.8, 0.82, 0.9, 0.85, 0.025, colors[1]);
+                makePaveText(canOut[i], "Breit-Wigner", 0.8, 0.79, 0.9, 0.82 , 0.025, kRed);
+                makePaveText(canOut[i], pairsNames[i].Data(),0.85, 0.73, 0.9, 0.77, 0.025);
+            }
+            else if(j == 0) 
+                makePaveText(canOut[i], canvasesNamesNice[j].Data(),0.25, 0.9, 0.5, 0.95, 0.025);
+            else if(j == 3)
+                makePaveText(canOut[i], canvasesNamesNice[j].Data(),0.68, 0.4, 0.9, 0.45, 0.025);
+            else
+                makePaveText(canOut[i], canvasesNamesNice[j].Data(),0.25, 0.4, 0.5, 0.45, 0.025);
         }
 
         fileOut->cd();
         canOut[i]->Write();
-        //canOut[i]->SaveAs(Form("outputMNewData/%sComp.png",pairsTitles[i].Data()));
+        canOut[i]->SaveAs(Form("outputMNewData/%sComp.png",pairsTitles[i].Data()));
 
 
 
