@@ -20,6 +20,7 @@ DecayTable* decaysTables[_N_PARTICLES_];
  Int_t pid[_N_PARTICLES_] = {12112, 1214, 22112, 32214, 2122, 32212, 2216, 12216,5218, 2128,32124,22124, 9299,2218,12214};//12214
  //Int_t pid[_N_PARTICLES_] = {12112};
  int colors[]={1, 600, 629, 414, 802, 880, 819, 922,433,618};
+ Double_t unstableTresh = 1e-6;
 
 Double_t BWFinalSpectra(Double_t *x, Double_t *par);
 
@@ -40,7 +41,7 @@ Double_t momentum2D(Double_t *x, Double_t *par) {// 0 - normalizacja, 1 - masa
 }
 
 Double_t BWConstGamma(Double_t *x, Double_t *par) { //0 - normalization, 1 - Gamma, 2 - M_R
-    if((x[0] > par[2] - 2.0*par[1]) && (x[0] < par[2] + 12.0*par[1]))
+    if((x[0] > (par[2] - 2.0*par[1])) && (x[0] < (par[2] + 12.0*par[1])))
         return par[0]*x[0]*x[0]*par[1]/((par[2]*par[2]-x[0]*x[0])*(par[2]*par[2]-x[0]*x[0]) + x[0]*x[0]*par[1]*par[1]);
     else 
         return 0;
@@ -85,8 +86,6 @@ Double_t GammaK2StableForDrawing(Double_t *x, Double_t *par) {//0-normalizacja, 
 Double_t GammaK2Unstable(Double_t m,ParticleType* mother,ParticleType* kid1, ParticleType* kid2,Double_t branchingRatio) {
 
     
-   /*
-    
     Double_t mMin1 = kid1->GetMass() - 2.0*kid1->GetGamma();
     Double_t mMax1 = kid1->GetMass() + 12.0*kid1->GetGamma();
 
@@ -94,57 +93,33 @@ Double_t GammaK2Unstable(Double_t m,ParticleType* mother,ParticleType* kid1, Par
     Double_t mMin2 = kid2->GetMass() - 2.0*kid2->GetGamma();
     Double_t mMax2 = kid2->GetMass() + 12.0*kid2->GetGamma();
 
-    TFile* file = new TFile("outputFinalBW/test.root","RECREATE");
 
-
-    //TF2 *fun = new TF2(Form("momentum%s+%s",kid1->GetName(),kid2->GetName()),momentum2D,mMin1,mMax1,mMin2,mMax2,2);
-    TF2 *fun = new TF2(Form("momentum%s+%s",kid1->GetName(),kid2->GetName()),momentum2D,0.497,5,0,5,2);
+    TF2 *fun = new TF2(Form("momentum%s+%s",kid1->GetName(),kid2->GetName()),momentum2D,mMin1,mMax1,mMin2,mMax2,2);
     fun->SetParameters(1.0,m);
-    //fun->SetNpx(5);
-    //fun->SetNpy(5);
-    //TH2D* hist = (TH2D*)fun->GetHistogram();
-    //hist->Scale(1.0/hist->Integral("width"));
-    //cout<<hist->GetNbinsX()<<endl;
-    //cout<<hist->GetNbinsY()<<endl;
-    Double_t x,y;
-    for(int i = 0; i <= hist->GetNbinsX(); i++) {
-        for(int j = 0; j <= hist->GetNbinsY(); j++) {
-            
-           // cout<<"GetBin(i,j): "<<hist->GetBin(i,j)<<endl;
-           cout<<"i: "<<i<<"\tj: "<<j<<endl;
-           //cout<<"GetBin(i,j): "<<hist->GetBin(i,j)<<endl;
-           //cout<<"FindBin x axis: "<<hist->GetXaxis()->FindBin(i)<<endl;
-           //cout<<"FindBin y axis: "<<hist->GetYaxis()->FindBin(j)<<endl;
-           //x = hist->GetXaxis()->GetBinCenter(hist->GetXaxis()->FindBin(i));
-           //y = hist->GetYaxis()->GetBinCenter(hist->GetYaxis()->FindBin(j));
-            x = hist->GetXaxis()->GetBinCenter(i);
-            y = hist->GetYaxis()->GetBinCenter(j);
+    fun->SetNpx(100);
+    fun->SetNpy(100);
+    TH2D* hist = (TH2D*)fun->GetHistogram();
 
-           cout<<"x: "<<x<<"\ty: "<<y<<endl;
-           //hist->SetBinContent(i,j,hist->GetBinContent(i,j)*momentum(m,hist->GetBinCenter(hist->GetBin(i,1)),hist->GetBinCenter(hist->GetBin(1,j))));
 
+    TF1* bw1 = new TF1(kid1->GetName(),BWConstGamma,mMin1,mMax1,3);
+    bw1->SetParameters(1.0,kid1->GetGamma(),kid1->GetMass());
+    bw1->SetParameter(0,1.0/bw1->Integral(mMin1,mMax1));
+
+    TF1* bw2 = new TF1(kid2->GetName(),BWConstGamma,mMin2,mMax2,3);
+    bw2->SetParameters(1.0,kid2->GetGamma(),kid2->GetMass());
+    bw2->SetParameter(0,1.0/bw2->Integral(mMin2,mMax2));
+
+    for(int i = 1; i <= hist->GetNbinsX(); i++) {
+        for(int j = 1; j <= hist->GetNbinsY(); j++) {
+           hist->SetBinContent(i,j,hist->GetBinContent(i,j)*bw1->Eval(hist->GetXaxis()->GetBinCenter(i))*bw2->Eval(hist->GetYaxis()->GetBinCenter(j)));
         }
     }
 
-    TCanvas *can = new TCanvas("can","can",1000,1000);
-    can->cd();
-    //hist->Draw("colz");
-    fun->Draw();
-    can->SaveAs("outputFinalBW/test.png");
-    file->cd();
-    fun->Write();
-    file->Save();
-    file->Close();
+    Double_t integral = hist->Integral(1,hist->GetNbinsX(),1,hist->GetNbinsY(),"width");
     
-    cout<<mMin2<<endl;
-    cout<<mMax2<<endl;
-    cout<<mMin1<<endl;
-    cout<<mMax1<<endl;
-    //if(m > (kid1->GetMass() + kid2->GetMass()))
-       // return hist->Integral("width")*GammaK2Stable(m,mother,kid1,kid2,branchingRatio);
-   // else   
-
-   */ 
+    if(m > (kid1->GetMass() + kid2->GetMass()))
+        return integral*GammaK2Stable(m,mother,kid1,kid2,branchingRatio);
+    else
         return 0;
 
 
@@ -199,7 +174,23 @@ Double_t BWFinalSpectra(Double_t *x, Double_t *par) { // 0 - normalizacja, 1 - p
                 gammaTot += GammaK2Stable(x[0],mother,kid1,kid2,decayTable->GetDecayChannel(i)->GetBranchingRatio());
             }
             else if (kid1->GetTable()->GetChannelCount() >= 0 && kid2->GetTable()->GetChannelCount() >= 0 ) { // 2 niestabilne
-                gammaTot += GammaK2Stable(x[0],mother,kid1,kid2,decayTable->GetDecayChannel(i)->GetBranchingRatio());
+
+                if(kid1->GetGamma() > unstableTresh && kid2->GetGamma() > unstableTresh) {
+                    gammaTot += GammaK2Unstable(x[0],mother,kid1,kid2,decayTable->GetDecayChannel(i)->GetBranchingRatio());
+                }
+                else if(kid1->GetGamma() < unstableTresh && kid2->GetGamma() < unstableTresh) { //jednak stabilne
+                    gammaTot += GammaK2Stable(x[0],mother,kid1,kid2,decayTable->GetDecayChannel(i)->GetBranchingRatio());
+                }
+                else if (kid1->GetGamma() > unstableTresh) { //1 - niestabilna
+                    gammaTot += GammaK1Unstable(x[0],mother,kid1,kid2,decayTable->GetDecayChannel(i)->GetBranchingRatio());
+                }
+                else if(kid2->GetGamma() > unstableTresh) {//2 - niestabilna
+                    gammaTot += GammaK1Unstable(x[0],mother,kid2,kid1,decayTable->GetDecayChannel(i)->GetBranchingRatio());
+                }
+
+
+
+                //gammaTot += GammaK2Stable(x[0],mother,kid1,kid2,decayTable->GetDecayChannel(i)->GetBranchingRatio());
             }
             else { // 1 niestabilna
                 if(kid1->GetTable()->GetChannelCount() >= 0) //zawsze pierwsza podana jest niestabilna
@@ -240,7 +231,7 @@ void massSpectraFinal() {
     for(int i = 0; i < particlesDB->GetParticleTypeCount(); i++) {
         particle = particlesDB->GetParticleType(i);
         
-        if(particle->GetTable()->GetChannelCount()>=0 && particle->GetGamma() > 1e-5 && !(TMath::Abs(particle->GetPDGCode()) == 2224 || TMath::Abs(particle->GetPDGCode()) == 2214 || TMath::Abs(particle->GetPDGCode()) == 2114 || TMath::Abs(particle->GetPDGCode()) == 1114)) {
+        if(particle->GetTable()->GetChannelCount()>=0 && particle->GetGamma() > unstableTresh && !(TMath::Abs(particle->GetPDGCode()) == 2224 || TMath::Abs(particle->GetPDGCode()) == 2214 || TMath::Abs(particle->GetPDGCode()) == 2114 || TMath::Abs(particle->GetPDGCode()) == 1114)) {
             if(particlesMap->find(TMath::Abs(particle->GetPDGCode())) == particlesMap->end())
                 (*particlesMap)[TMath::Abs(particle->GetPDGCode())] = particlesDB->GetParticleType(i);
         }
@@ -257,8 +248,11 @@ void massSpectraFinal() {
     ParticleType* tmp3;
     TFile *fileOut = new TFile("outputAllBW/BW.root","RECREATE");
 
+    Int_t licznik = 1;
+
     for (auto const& [key, part] : (*particlesMap)) {
-        cout<<key<<"\t"<<part->GetName()<<endl;
+        //ParticleType* part = (*particlesMap)[1214];
+        cout<<licznik<<"/"<<particlesMap->size()<<":\t"<<part->GetName()<<endl;
         for(int i = 0; i <= part->GetTable()->GetChannelCount(); i++) {
 
             tmp1 = (ParticleType*)particlesDB->GetParticleType(part->GetTable()->GetDecayChannel(i)->GetParticle1());
@@ -282,16 +276,19 @@ void massSpectraFinal() {
         mMax.push_back(part->GetMass() + 12.0 * part->GetGamma());
         //cout<<mTresh.back()<<"\t"<<mMax.back()<<endl;
 
-        fun.push_back( new TF1(part->GetName(),BWFinalSpectra,mTresh.back(),mMax.back(),2));
+        fun.push_back( new TF1(Form("%i",key),BWFinalSpectra,mTresh.back(),mMax.back(),2));
         fun.back()->SetParameter(0,1);
         fun.back()->SetParameter(1,key);
         fun.back()->SetNpx(500);
 
         
-        hist.push_back((TH1D*)fun.back()->GetHistogram());
+        hist.push_back((TH1D*)fun.back()->GetHistogram()->Clone(Form("%i",key)));
         hist.back()->Scale(1.0/hist.back()->Integral("width"));
+        hist.back()->SetOption("L");
         fileOut->cd();
-        fun.back()->Write();
+        //fun.back()->Write();
+        hist.back()->Write();
+        licznik++;
 
 
 
@@ -300,130 +297,7 @@ void massSpectraFinal() {
 
     fileOut->Close();
     fileOut->Save();
-    //for(auto m : mTresh)
-        //cout<<m<<endl;
-    //cout<<particlesMap->find(1214)->second->GetName()<<endl;
 
-    //CALCULATING BREIT WIGNER   
-    //TF1* fun[_N_PARTICLES_];
-    //TH1D* hist[_N_PARTICLES_];
-
-
-
-
-
-    /*for(int i = 0; i < particlesDB->GetParticleTypeCount(); i++) {
-        particle = particlesDB->GetParticleType(i);
-        decaysTable = particlesDB->GetParticleType(i)->GetTable();
-        
-        if(decaysTable->GetChannelCount()>=0 && particle->GetGamma() > 1e-5 && !(TMath::Abs(particle->GetPDGCode()) == 2224 || TMath::Abs(particle->GetPDGCode()) == 2214 || TMath::Abs(particle->GetPDGCode()) == 2114 || TMath::Abs(particle->GetPDGCode()) == 1114)) {
-            cout<<particle->GetName()<<endl;
-            //cout<<"Liczba kanałow "<<decaysTable->GetChannelCount()+1<<endl;
-            nTot++;
-            for(int j = 0; j <= decaysTable->GetChannelCount(); j++) {
-                if(!decaysTable->GetDecayChannel(j)->Is3Particle()) {
-                    tmp1 = (ParticleType*)particlesDB->GetParticleType(decaysTable->GetDecayChannel(j)->GetParticle1());
-                    tmp2 = (ParticleType*)particlesDB->GetParticleType(decaysTable->GetDecayChannel(j)->GetParticle2());
-                   // cout<<Form("%s+%s",tmp1->GetName(),tmp2->GetName());
-                // cout<<tmp1->GetTable()->GetChannelCount()<<endl;
-                    //cout<<tmp2->GetTable()->GetChannelCount()<<endl;
-                   // cout<<"\t"<<decaysTable->GetDecayChannel(j)->GetBranchingRatio()<<endl;
-                }
-                else {
-                    //out<<"3ciałowy!"<<endl;
-                    tmp3 = (ParticleType*)particlesDB->GetParticleType(decaysTable->GetDecayChannel(j)->GetParticle3());
-                    //cout<<Form("%s+%s+%s",tmp1->GetName(),tmp2->GetName(),tmp3->GetName());
-                    //cout<<"branching ratio: "<<decaysTable->GetDecayChannel(j)->GetBranchingRatio()<<endl;
-                }
-            }
-        }*/
-
-        /*for(int j = 0; j <= decaysTables[i]->GetChannelCount(); j++) {
-
-            tmp1 = (ParticleType*)particlesDB->GetParticleType(decaysTables[i]->GetDecayChannel(j)->GetParticle1());
-            tmp2 = (ParticleType*)particlesDB->GetParticleType(decaysTables[i]->GetDecayChannel(j)->GetParticle2());
-          //cout<<part1->GetName()<<" + "<<part2->GetName();
-            if(!decaysTables[i]->GetDecayChannel(j)->Is3Particle()) 
-                massSum = tmp1->GetMass() + tmp2->GetMass();
-            else {
-                tmp3 = (ParticleType*)particlesDB->GetParticleType(decaysTables[i]->GetDecayChannel(j)->GetParticle3());
-                massSum = tmp1->GetMass() + tmp2->GetMass() + tmp3->GetMass();
-            }
-                
-            
-                if (j == 0)
-                    massTresh[i] = massSum;
-                else {
-                    if(massSum < massTresh[i])
-                        massTresh[i] = massSum;
-                }
-          }
-          //cout<<"\t"<<massTresh[i]<<endl;;
-          //cout<<decaysChannels[i][j]->GetParticle1()-><<" + "<<decaysChannels[i][j]->GetParticle2()<<decaysChannels[i][j]->GetParticle3()<<endl;
-
-        
-        mMin[i] = particles[i]->GetMass() - 2.0*particles[i]->GetGamma();
-        //mMin[i] = massTresh[i];
-        mMax[i] = particles[i]->GetMass() + 12.0*particles[i]->GetGamma();
-        fun[i] = new TF1(particles[i]->GetName(),BWFinalSpectra,mMin[i],mMax[i],2);
-        fun[i]->SetParameter(0,1);
-        fun[i]->SetParameter(1,i);
-        fun[i]->SetNpx(500);
-
-        can[i]= new TCanvas(Form("can%s",particles[i]->GetName()),Form("can%s",particles[i]->GetName()),1000,1000);
-        can[i]->cd();
-
-
-        hist[i] = (TH1D*)fun[i]->GetHistogram();
-        hist[i]->Scale(1.0/hist[i]->Integral("width"));
-                hist[i]->Draw("hist");
-        can[i]->SaveAs(Form("outputFinalBW/%sFinalBW.png",particles[i]->GetName()));
-
-
-
-
-        cout<<endl<<"******************"<<endl<<endl;
-    }*/
-
-    //PRINT HISTOGRAMS
-   /*ofstream fileTxt;
-    fileTxt.open("histogramsFinal-2_12.txt");
-
-
-    fileTxt<<"TH1D *getBreitWigner(int pdg) {"<<endl;
-    fileTxt<<"\tstatic std::map<int, std::vector<Double_t>> histograms;"<<endl;
-    fileTxt<<"\tstatic std::map<int, Double_t> mMin;"<<endl;
-    fileTxt<<"\tstatic std::map<int, Double_t> mMax;"<<endl;
-    for(int i=0; i < _N_PARTICLES_; i++) {
-        
-        
-        fileTxt<<"\thistograms["<<pid[i]<<"] = {";
-        for(int j = 1; j <= hist[i]->GetNbinsX(); j++) {
-            if (j != hist[i]->GetNbinsX())
-                fileTxt<<hist[i]->GetBinContent(j)<<",";
-            else    
-                fileTxt<<hist[i]->GetBinContent(j)<<"};"<<endl;
-        }
-        fileTxt<<"\tmMin["<<pid[i]<<"] = "<<mMin[i]<<";"<<endl;
-        fileTxt<<"\tmMax["<<pid[i]<<"] = "<<mMax[i]<<";"<<endl;
-
-    }
-    fileTxt<<"\tTH1D *hist = new TH1D(Form(\"hist%i\",pdg),Form(\"hist%i\",pdg),500,mMin[pdg],mMax[pdg]);"<<endl;
-    fileTxt<<"\tfor(int i = 1; i <= hist->GetNbinsX(); i++)"<<endl;
-    fileTxt<<"\t\thist->SetBinContent(i,histograms[pdg][i]);"<<endl;
-    fileTxt<<endl<<"\treturn hist;"<<endl<<"}"<<endl<<endl;
-    fileTxt.close();*/
-
-        //PRINT FOR MATHEMATICA
-
-    /*hist[0]->Rebin(5);
-    hist[0]->Scale(1.0/5);
-    ofstream fileMath;
-    fileMath.open("Ns1440zerFinal.dat");
-    for(int i = 1; i <= hist[0]->GetNbinsX(); i++ ) {
-      fileMath<<hist[0]->GetBinCenter(i)<<"\t"<<hist[0]->GetBinContent(i)<<endl;
-    }
-  fileMath.close();*/
 
 }
 
@@ -477,99 +351,153 @@ void drawingGamma() {
     for(int i = 0; i < particlesDB->GetParticleTypeCount(); i++) {
         particle = particlesDB->GetParticleType(i);
         
-        if(particle->GetTable()->GetChannelCount()>=0 && particle->GetGamma() > 1e-5 && !(TMath::Abs(particle->GetPDGCode()) == 2224 || TMath::Abs(particle->GetPDGCode()) == 2214 || TMath::Abs(particle->GetPDGCode()) == 2114 || TMath::Abs(particle->GetPDGCode()) == 1114)) {
+        if(particle->GetTable()->GetChannelCount()>=0 && particle->GetGamma() > unstableTresh && !(TMath::Abs(particle->GetPDGCode()) == 2224 || TMath::Abs(particle->GetPDGCode()) == 2214 || TMath::Abs(particle->GetPDGCode()) == 2114 || TMath::Abs(particle->GetPDGCode()) == 1114)) {
             if(particlesMap->find(TMath::Abs(particle->GetPDGCode())) == particlesMap->end())
                 (*particlesMap)[TMath::Abs(particle->GetPDGCode())] = particlesDB->GetParticleType(i);
         }
     }
+    //cout<<particlesMap->size()<<endl;
 
-    std::vector<TF1*> gammaK[_N_PARTICLES_];
-    ParticleType* kid1;
-    ParticleType* kid2;
-    ParticleType* kid3;
-    TCanvas *can[_N_PARTICLES_];
+    std::vector<TF1*> gammaK;
+    ParticleType* tmp1;
+    ParticleType* tmp2;
+    ParticleType* tmp3;
+    std::vector<TCanvas*> can;
+   // TCanvas *can[_N_PARTICLES_];
 
-    TH1D *gammaTot[_N_PARTICLES_];
+    TH1D *gammaTot;
+    Double_t massSum;
+    Double_t massTresh;
+    Int_t licznik = 1;
 
-    TFile *fileOut = new TFile("outputFinalBW/diffGammaFinal.root","RECREATE");
+    TFile *fileOut = new TFile("outputAllBW/diffGammaFinal.root","RECREATE");
 
-    for(int i = 0; i < _N_PARTICLES_; i++) {
-        particles[i] = particlesDB->FindByPID(pid[i]);
-        decaysTables[i] = particles[i]->GetTable();
-        cout<<particles[i]->GetName()<<endl;
-        mMin[i] = particles[i]->GetMass() - 2.0*particles[i]->GetGamma();
-        mMax[i] = particles[i]->GetMass() + 12.0*particles[i]->GetGamma();
-        can[i]= new TCanvas(Form("can%s",particles[i]->GetName()),Form("can%s",particles[i]->GetName()),1000,1000);
-        for(int j = 0; j <= decaysTables[i]->GetChannelCount(); j++) {
-            kid1 = (ParticleType*)particlesDB->GetParticleType(decaysTables[i]->GetDecayChannel(j)->GetParticle1());
-            kid2 = (ParticleType*)particlesDB->GetParticleType(decaysTables[i]->GetDecayChannel(j)->GetParticle2());
-            if(!decaysTables[i]->GetDecayChannel(j)->Is3Particle()) {
-                if ( kid1->GetTable()->GetChannelCount() < 0 && kid2->GetTable()->GetChannelCount() < 0) { //2 stabilne
-                    cout<<"2 stabilne: "<<kid1->GetName()<<" + "<<kid2->GetName()<<endl;
+    for (auto const& [key, part] : (*particlesMap)) {
+         cout<<licznik<<"/"<<particlesMap->size()<<":\t"<<part->GetName()<<endl;
+        for(int i = 0; i <= part->GetTable()->GetChannelCount(); i++) {
 
-                    gammaK[i].push_back(new TF1(Form("%s+%s",kid1->GetName(),kid2->GetName()),GammaK2StableForDrawing,mMin[i],mMax[i],5));
-                    gammaK[i][j]->SetParameters(1.0,pid[i],kid1->GetPDGCode(),kid2->GetPDGCode(),decaysTables[i]->GetDecayChannel(j)->GetBranchingRatio());
+            tmp1 = (ParticleType*)particlesDB->GetParticleType(part->GetTable()->GetDecayChannel(i)->GetParticle1());
+            tmp2 = (ParticleType*)particlesDB->GetParticleType(part->GetTable()->GetDecayChannel(i)->GetParticle2());
+          //cout<<part1->GetName()<<" + "<<part2->GetName();
+            if(!part->GetTable()->GetDecayChannel(i)->Is3Particle()) 
+                massSum = tmp1->GetMass() + tmp2->GetMass();
+            else {
+                tmp3 = (ParticleType*)particlesDB->GetParticleType(part->GetTable()->GetDecayChannel(i)->GetParticle3());
+                massSum = tmp1->GetMass() + tmp2->GetMass() + tmp3->GetMass();
+            }
+            
+            if (i == 0)
+                massTresh = massSum;
+            else {
+                if(massSum < massTresh)
+                    massTresh = massSum;
+            }
+        }
+        mTresh.push_back(massTresh);
+        mMax.push_back(part->GetMass() + 12.0 * part->GetGamma());
+        can.push_back(new TCanvas(Form("%ican%s",licznik,part->GetName()),Form("%ican%s",licznik,part->GetName()),1000,1000));
+
+        for(int i = 0; i <= part->GetTable()->GetChannelCount(); i++) {
+            tmp1 = (ParticleType*)particlesDB->GetParticleType(part->GetTable()->GetDecayChannel(i)->GetParticle1());
+            tmp2 = (ParticleType*)particlesDB->GetParticleType(part->GetTable()->GetDecayChannel(i)->GetParticle2());
+            if(!part->GetTable()->GetDecayChannel(i)->Is3Particle()) { //2 ciałowy
+                if ( tmp1->GetTable()->GetChannelCount() < 0 && tmp2->GetTable()->GetChannelCount() < 0) { //2 stabilne
+                
+                    gammaK.push_back(new TF1(Form("%s+%s",tmp1->GetName(),tmp2->GetName()),GammaK2StableForDrawing,mTresh.back(),mMax.back(),5));
+                    gammaK.back()->SetParameters(1.0,key,tmp1->GetPDGCode(),tmp2->GetPDGCode(),part->GetTable()->GetDecayChannel(i)->GetBranchingRatio());
+
                 }
-                else if (kid1->GetTable()->GetChannelCount() >= 0 && kid2->GetTable()->GetChannelCount() >= 0 ) { // 2 niestabilne
-                    cout<<"2 NIESTABILNE: "<<kid1->GetName()<<" + "<<kid2->GetName()<<endl;
-                    gammaK[i].push_back(new TF1(Form("%s+%s",kid1->GetName(),kid2->GetName()),GammaK2StableForDrawing,mMin[i],mMax[i],5));
-                    gammaK[i][j]->SetParameters(1.0,pid[i],kid1->GetPDGCode(),kid2->GetPDGCode(),decaysTables[i]->GetDecayChannel(j)->GetBranchingRatio());
+                else if (tmp1->GetTable()->GetChannelCount() >= 0 && tmp2->GetTable()->GetChannelCount() >= 0) { // 2 niestabilne
+
+                    if(tmp1->GetGamma() > unstableTresh && tmp2->GetGamma() > unstableTresh) {
+                        //cout<<"2 na SERIO niestabilne: "<<tmp1->GetName()<<" +"<<tmp2->GetName()<<endl;
+                        gammaK.push_back(new TF1(Form("%s+%s",tmp1->GetName(),tmp2->GetName()),GammaK2UnstableForDrawing,mTresh.back(),mMax.back(),5));
+                        gammaK.back()->SetParameters(1.0,key,tmp1->GetPDGCode(),tmp2->GetPDGCode(),part->GetTable()->GetDecayChannel(i)->GetBranchingRatio());
+
+                    }
+                    else if(tmp1->GetGamma() < unstableTresh && tmp2->GetGamma() < unstableTresh) { //jednak stabilne
+                        //cout<<"2 nie na serio niestabilne: "<<tmp1->GetName()<<" +"<<tmp2->GetName()<<endl;
+                        gammaK.push_back(new TF1(Form("%s+%s",tmp1->GetName(),tmp2->GetName()),GammaK2StableForDrawing,mTresh.back(),mMax.back(),5));
+                        gammaK.back()->SetParameters(1.0,key,tmp1->GetPDGCode(),tmp2->GetPDGCode(),part->GetTable()->GetDecayChannel(i)->GetBranchingRatio());
+                    }
+                    else if (tmp1->GetGamma() > unstableTresh) { //1 - niestabilna
+                        //cout<<"2 niestabilne, ale 1. serio niestabilna: "<<tmp1->GetName()<<" +"<<tmp2->GetName()<<endl;
+                        gammaK.push_back(new TF1(Form("%s+%s",tmp1->GetName(),tmp2->GetName()),GammaK1UnstableForDrawing,mTresh.back(),mMax.back(),5));
+                        gammaK.back()->SetParameters(1.0,key,tmp1->GetPDGCode(),tmp2->GetPDGCode(),part->GetTable()->GetDecayChannel(i)->GetBranchingRatio());
+
+                    }
+                    else if(tmp2->GetGamma() > unstableTresh) {//2 - niestabilna
+                        //cout<<"2 niestabilne, ale 2. serio niestabilna: "<<tmp1->GetName()<<" +"<<tmp2->GetName()<<endl;
+                        gammaK.push_back(new TF1(Form("%s+%s",tmp2->GetName(),tmp1->GetName()),GammaK1UnstableForDrawing,mTresh.back(),mMax.back(),5));
+                        gammaK.back()->SetParameters(1.0,key,tmp2->GetPDGCode(),tmp1->GetPDGCode(),part->GetTable()->GetDecayChannel(i)->GetBranchingRatio());
+                    }
                 }
                 else { // 1 niestabilna
-                    if(kid1->GetTable()->GetChannelCount() >= 0) {//zawsze pierwsza podana jest niestabilna
-                        cout<<"1 niestabilna: "<<kid1->GetName()<<" + "<<kid2->GetName()<<endl;
-                        gammaK[i].push_back(new TF1(Form("%s+%s",kid1->GetName(),kid2->GetName()),GammaK1UnstableForDrawing,mMin[i],mMax[i],5));
-                        gammaK[i][j]->SetParameters(1.0,pid[i],kid1->GetPDGCode(),kid2->GetPDGCode(),decaysTables[i]->GetDecayChannel(j)->GetBranchingRatio());
+                    if(tmp1->GetTable()->GetChannelCount() >= 0){ //zawsze pierwsza podana jest niestabilna
+                        gammaK.push_back(new TF1(Form("%s+%s",tmp1->GetName(),tmp2->GetName()),GammaK1UnstableForDrawing,mTresh.back(),mMax.back(),5));
+                        gammaK.back()->SetParameters(1.0,key,tmp1->GetPDGCode(),tmp2->GetPDGCode(),part->GetTable()->GetDecayChannel(i)->GetBranchingRatio());
                     }
-                    else if(kid2->GetTable()->GetChannelCount() >= 0) {
-                        cout<<"1 niestabilna: "<<kid2->GetName()<<" + "<<kid1->GetName()<<endl;
-                        gammaK[i].push_back(new TF1(Form("%s+%s",kid1->GetName(),kid2->GetName()),GammaK1UnstableForDrawing,mMin[i],mMax[i],5));
-                        gammaK[i][j]->SetParameters(1.0,pid[i],kid2->GetPDGCode(),kid1->GetPDGCode(),decaysTables[i]->GetDecayChannel(j)->GetBranchingRatio());
+                    else if(tmp2->GetTable()->GetChannelCount() >= 0) {
+                        gammaK.push_back(new TF1(Form("%s+%s",tmp2->GetName(),tmp1->GetName()),GammaK1UnstableForDrawing,mTresh.back(),mMax.back(),5));
+                        gammaK.back()->SetParameters(1.0,key,tmp2->GetPDGCode(),tmp1->GetPDGCode(),part->GetTable()->GetDecayChannel(i)->GetBranchingRatio());
                     }
                 }
-            }
+            
+            }  
             else {
-                kid3 = (ParticleType*)particlesDB->GetParticleType(decaysTables[i]->GetDecayChannel(j)->GetParticle3());
-                cout<<"3 ciałowy: "<<kid1->GetName()<<" + "<<kid2->GetName()<<" + "<<kid3->GetName()<<endl;
-                gammaK[i].push_back(new TF1(Form("%s+%s+%s",kid1->GetName(),kid2->GetName(),kid3->GetName()),ThreebodyDecayForDrawing,mMin[i],mMax[i],1));
-                gammaK[i][j]->SetParameter(0,decaysTables[i]->GetDecayChannel(j)->GetBranchingRatio() * particles[i]->GetGamma());
+                tmp3 = (ParticleType*)particlesDB->GetParticleType(part->GetTable()->GetDecayChannel(i)->GetParticle3());
+               // cout<<"3 ciałowy: "<<kid1->GetName()<<" + "<<kid2->GetName()<<" + "<<kid3->GetName()<<endl;
+                gammaK.push_back(new TF1(Form("%s+%s+%s",tmp1->GetName(),tmp2->GetName(),tmp3->GetName()),ThreebodyDecayForDrawing,mTresh.back(),mMax.back(),1));
+                gammaK.back()->SetParameter(0,part->GetTable()->GetDecayChannel(i)->GetBranchingRatio() * part->GetGamma());
+
             }
 
-            gammaK[i][j]->SetLineColor(colors[j]);
-            gammaK[i][j]->SetLineStyle(2);
-            gammaK[i][j]->SetMinimum(0);
-            //gammaK[i][j]->SetMaximum(1);
-            /*can[i]->cd();
-            if(j==0)    
-                gammaK[i][j]->Draw();
-            else
-                gammaK[i][j]->Draw("same");*/
-
-
+            gammaK.back()->SetLineColor(colors[gammaK.size()-1]);
+            gammaK.back()->SetLineStyle(2);
+            gammaK.back()->SetMinimum(0);
 
         }
 
-        gammaTot[i] = new TH1D(particles[i]->GetName(),particles[i]->GetName(),100,mMin[i],mMax[i]);
-        for (auto gammaChannels : gammaK[i]){
-           // gammaChannels->SetNpx(200);
-            gammaTot[i]->Add(gammaChannels->GetHistogram());
+        gammaTot = new TH1D(part->GetName(),part->GetName(),100,mTresh.back(),mMax.back());
+        for (auto gammaChannels : gammaK){
+            // gammaChannels->SetNpx(200);
+                gammaTot->Add(gammaChannels->GetHistogram());
         }
-        gammaTot[i]->SetMinimum(0);
-        gammaTot[i]->SetLineColor(kRed);
-        gammaTot[i]->SetLineWidth(2);
+        gammaTot->SetMinimum(0);
+        gammaTot->SetLineColor(kRed);
+        gammaTot->SetLineWidth(2);
 
-        can[i]->cd();
-        gammaTot[i]->Draw("L");
-        for (auto gammaChannels : gammaK[i])
+        can.back()->cd();
+        gammaTot->Draw("L");
+        for (auto gammaChannels : gammaK)
             gammaChannels->Draw("same");
-
         fileOut->cd();
-        can[i]->Write();
+        can.back()->Write();
 
-        
+        gammaK.clear();
+
+
+        licznik++;
     }
+
     fileOut->Close();
     fileOut->Save();
+
+    cout<<particlesMap->size()<<endl;
+    
+
+}
+
+void testGammaTresh(){  
+    TCanvas* can = new TCanvas("can","can",1000,1000);
+    ParticleType *part = particlesDB->FindByPID(3212);
+    Double_t mass = part->GetMass();
+    Double_t gamma =  part->GetGamma();
+    TF1 *fun = new TF1(part->GetName(),BWConstGamma,mass - 2.0 * gamma,mass + 12.0 * gamma,3);
+    fun->SetParameters(1.0,gamma,mass);
+    can->cd();
+    fun->Draw();
+    can->SaveAs("./outputAllBW/test.png");
 
 
 }
@@ -584,10 +512,10 @@ void generateMassSpectraAll() {
    massSpectraFinal();
 
 
-    //drawingGamma();
-   //GammaK2Unstable(1.8,particlesDB->FindByPID(8117),particlesDB->FindByPID(3122), particlesDB->FindByPID(311),0.08);
+    drawingGamma();
+   //GammaK2Unstable(2.5,particlesDB->FindByPID(40225),particlesDB->FindByPID(333), particlesDB->FindByPID(333),1.0);
    //test2Unstable();
-    
+    //testGammaTresh();
 
 
 
